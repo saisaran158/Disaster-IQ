@@ -1,10 +1,28 @@
 package com.kce.project.entity;
 
 
-import jakarta.persistence.*;
-import lombok.*;
-
 import java.util.List;
+
+import com.kce.project.enums.DifficultyLevel;
+import com.kce.project.enums.DisasterType;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.OneToOne;
+import jakarta.persistence.Table;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 @Entity
 @Table(name = "simulations")
@@ -25,9 +43,11 @@ public class Simulation {
     @Column(length = 1000)
     private String description;
 
-    private String disasterType;
+    @Enumerated(EnumType.STRING)
+    private DisasterType disasterType;
 
-    private String difficulty;
+    @Enumerated(EnumType.STRING)
+    private DifficultyLevel difficulty;
 
     private Integer duration;
 
@@ -44,4 +64,5 @@ public class Simulation {
 
     @OneToOne(mappedBy = "simulation")
     private Assessment assessment;
+
 }
