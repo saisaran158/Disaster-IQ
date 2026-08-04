@@ -14,25 +14,27 @@ import java.util.List;
 @Builder
 public class ClassRoom {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long classId;
+	@Id
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	private Long classId;
 
-    private String className;
+	private String className;
 
-    private String section;
+	private String section;
 
-    private String academicYear;
+	private String academicYear;
 
-    @ManyToOne
-    @JoinColumn(name = "teacher_id")
-    private Teacher teacher;
+	@ManyToOne
+	@JoinColumn(name = "teacher_id")
+	private Teacher teacher;
 
-    @ManyToOne
-    @JoinColumn(name = "school_id")
-    private School school;
+	@ManyToOne
+	@JoinColumn(name = "school_id")
+	private School school;
 
-    @OneToMany(mappedBy = "classRoom")
-    private List<Student> students;
+	@OneToMany(mappedBy = "classRoom")
+	private List<Student> students;
+	@OneToMany(mappedBy = "classRoom")
+	private List<Assignment> assignments;
 
 }
