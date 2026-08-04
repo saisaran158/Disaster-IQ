@@ -8,7 +8,6 @@ public class DisasteriqApplication {
 
 	public static void main(String[] args) {
 		SpringApplication.run(DisasteriqApplication.class, args);
-		System.out.println("Hello");
 	}
 
 }
