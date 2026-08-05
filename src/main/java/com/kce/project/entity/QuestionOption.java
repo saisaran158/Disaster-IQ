@@ -1,6 +1,5 @@
 package com.kce.project.entity;
 
-
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -11,18 +10,28 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class QuestionOption {
+public class QuestionOption extends BaseEntity {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @SequenceGenerator(
+            name = "option_seq",
+            sequenceName = "option_seq",
+            allocationSize = 1
+    )
+    @GeneratedValue(
+            strategy = GenerationType.SEQUENCE,
+            generator = "option_seq"
+    )
+    @Column(name = "option_id")
     private Long optionId;
 
     @Column(length = 500)
     private String optionText;
 
-    private boolean correct;
+    private Boolean correct;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "question_id")
     private Question question;
+
 }

@@ -1,29 +1,13 @@
 package com.kce.project.entity;
 
-
-import java.util.List;
-
-import com.kce.project.enums.AssignmentStatus;
-import com.kce.project.enums.DifficultyLevel;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.kce.project.enums.DisasterType;
+import com.kce.project.enums.DifficultyLevel;
+import jakarta.persistence.*;
+import lombok.*;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.OneToMany;
-import jakarta.persistence.OneToOne;
-import jakarta.persistence.Table;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "simulations")
@@ -32,10 +16,19 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class Simulation {
+public class Simulation extends BaseEntity {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @SequenceGenerator(
+            name = "simulation_seq",
+            sequenceName = "simulation_seq",
+            allocationSize = 1
+    )
+    @GeneratedValue(
+            strategy = GenerationType.SEQUENCE,
+            generator = "simulation_seq"
+    )
+    @Column(name = "simulation_id")
     private Long simulationId;
 
     @Column(nullable = false)
@@ -54,19 +47,26 @@ public class Simulation {
 
     private String thumbnail;
 
-    private boolean active;
+    @Builder.Default
+    private Boolean active = true;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "teacher_id")
     private Teacher createdBy;
 
-    @OneToMany(mappedBy = "simulation")
-    private List<Assignment> assignments;
+    @Builder.Default
+    @JsonIgnore
+    @OneToMany(mappedBy = "simulation",
+            cascade = CascadeType.ALL,
+            fetch = FetchType.LAZY)
+    private List<Assignment> assignments = new ArrayList<>();
 
-    @OneToOne(mappedBy = "simulation")
+    @OneToOne(mappedBy = "simulation",
+            cascade = CascadeType.ALL,
+            fetch = FetchType.LAZY)
     private Assessment assessment;
     
-    @Enumerated(EnumType.STRING)
-    private AssignmentStatus status;
+    @OneToMany(mappedBy = "simulation")
+    private List<AIRecommendation> recommendations;
 
 }

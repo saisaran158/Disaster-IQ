@@ -1,6 +1,5 @@
 package com.kce.project.entity;
 
-
 import com.kce.project.enums.SimulationStatus;
 import jakarta.persistence.*;
 import lombok.*;
@@ -14,17 +13,26 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class StudentProgress {
+public class StudentProgress extends BaseEntity {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @SequenceGenerator(
+            name = "progress_seq",
+            sequenceName = "progress_seq",
+            allocationSize = 1
+    )
+    @GeneratedValue(
+            strategy = GenerationType.SEQUENCE,
+            generator = "progress_seq"
+    )
+    @Column(name = "progress_id")
     private Long progressId;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "student_id")
     private Student student;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "assignment_id")
     private Assignment assignment;
 

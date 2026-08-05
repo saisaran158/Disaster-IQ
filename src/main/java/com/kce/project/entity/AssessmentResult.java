@@ -1,18 +1,11 @@
 package com.kce.project.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import jakarta.persistence.*;
+import lombok.*;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.Table;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "assessment_results")
@@ -21,17 +14,26 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class AssessmentResult {
+public class AssessmentResult extends BaseEntity {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @SequenceGenerator(
+            name = "result_seq",
+            sequenceName = "result_seq",
+            allocationSize = 1
+    )
+    @GeneratedValue(
+            strategy = GenerationType.SEQUENCE,
+            generator = "result_seq"
+    )
+    @Column(name = "result_id")
     private Long resultId;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "student_id")
     private Student student;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "assessment_id")
     private Assessment assessment;
 
@@ -42,5 +44,12 @@ public class AssessmentResult {
     private Double percentage;
 
     private Boolean passed;
+
+    @Builder.Default
+    @JsonIgnore
+    @OneToMany(mappedBy = "assessmentResult",
+            cascade = CascadeType.ALL,
+            fetch = FetchType.LAZY)
+    private List<StudentAnswer> answers = new ArrayList<>();
 
 }

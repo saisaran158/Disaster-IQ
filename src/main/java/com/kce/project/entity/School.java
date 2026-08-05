@@ -1,23 +1,13 @@
 package com.kce.project.entity;
 
-import java.time.LocalDateTime;
-import java.util.List;
-
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.OneToMany;
-import jakarta.persistence.PrePersist;
-import jakarta.persistence.PreUpdate;
-import jakarta.persistence.Table;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import jakarta.persistence.*;
+import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "schools")
@@ -26,14 +16,23 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class School {
+public class School extends BaseEntity {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @SequenceGenerator(
+            name = "school_seq",
+            sequenceName = "school_seq",
+            allocationSize = 1
+    )
+    @GeneratedValue(
+            strategy = GenerationType.SEQUENCE,
+            generator = "school_seq"
+    )
+    @Column(name = "school_id")
     private Long schoolId;
 
     @NotBlank
-    @Column(nullable = false)
+    @Column(nullable = false, unique = true)
     private String schoolName;
 
     @NotBlank
@@ -42,37 +41,42 @@ public class School {
     @NotBlank
     private String state;
 
-    @Column(length = 500)
     private String address;
 
     private String pincode;
 
     private String phone;
 
+    @Email
     @Column(unique = true)
     private String email;
 
-    private LocalDateTime createdAt;
+    @Builder.Default
+    @JsonIgnore
+    @OneToMany(mappedBy = "school",
+            cascade = CascadeType.ALL,
+            fetch = FetchType.LAZY)
+    private List<User> users = new ArrayList<>();
 
-    private LocalDateTime updatedAt;
+    @Builder.Default
+    @JsonIgnore
+    @OneToMany(mappedBy = "school",
+            cascade = CascadeType.ALL,
+            fetch = FetchType.LAZY)
+    private List<Teacher> teachers = new ArrayList<>();
 
-    @PrePersist
-    public void onCreate() {
-        createdAt = LocalDateTime.now();
-        updatedAt = LocalDateTime.now();
-    }
-
-    @PreUpdate
-    public void onUpdate() {
-        updatedAt = LocalDateTime.now();
-    }
+    @Builder.Default
+    @JsonIgnore
+    @OneToMany(mappedBy = "school",
+            cascade = CascadeType.ALL,
+            fetch = FetchType.LAZY)
+    private List<Student> students = new ArrayList<>();
     
-    @OneToMany(mappedBy = "school")
-    private List<Teacher> teachers;
+    @Builder.Default
+    @JsonIgnore
+    @OneToMany(mappedBy = "school",
+            cascade = CascadeType.ALL,
+            fetch = FetchType.LAZY)
+    private List<SchoolClass> classes = new ArrayList<>();
 
-    @OneToMany(mappedBy = "school")
-    private List<Student> students;
-
-    @OneToMany(mappedBy = "school")
-    private List<ClassRoom> classrooms;
 }

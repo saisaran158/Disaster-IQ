@@ -1,6 +1,5 @@
 package com.kce.project.entity;
 
-
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -11,17 +10,26 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class AIRecommendation {
+public class AIRecommendation extends BaseEntity {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @SequenceGenerator(
+            name = "recommendation_seq",
+            sequenceName = "recommendation_seq",
+            allocationSize = 1
+    )
+    @GeneratedValue(
+            strategy = GenerationType.SEQUENCE,
+            generator = "recommendation_seq"
+    )
+    @Column(name = "recommendation_id")
     private Long recommendationId;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "student_id")
     private Student student;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "simulation_id")
     private Simulation simulation;
 

@@ -1,6 +1,5 @@
 package com.kce.project.entity;
 
-
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -11,22 +10,30 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class Parent {
+public class Parent extends BaseEntity {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @SequenceGenerator(
+            name = "parent_seq",
+            sequenceName = "parent_seq",
+            allocationSize = 1
+    )
+    @GeneratedValue(
+            strategy = GenerationType.SEQUENCE,
+            generator = "parent_seq"
+    )
+    @Column(name = "parent_id")
     private Long parentId;
 
-    @OneToOne
-    @JoinColumn(name = "user_id")
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", unique = true)
     private User user;
 
-    @OneToOne
-    @JoinColumn(name = "student_id")
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "student_id", unique = true)
     private Student student;
 
     private String occupation;
 
     private String relationship;
-
 }
