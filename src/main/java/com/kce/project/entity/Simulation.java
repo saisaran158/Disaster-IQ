@@ -3,6 +3,7 @@ package com.kce.project.entity;
 
 import java.util.List;
 
+import com.kce.project.enums.AssignmentStatus;
 import com.kce.project.enums.DifficultyLevel;
 import com.kce.project.enums.DisasterType;
 
@@ -64,5 +65,8 @@ public class Simulation {
 
     @OneToOne(mappedBy = "simulation")
     private Assessment assessment;
+    
+    @Enumerated(EnumType.STRING)
+    private AssignmentStatus status;
 
 }
