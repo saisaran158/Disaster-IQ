@@ -1,12 +1,33 @@
 package com.kce.project.repository;
 
-import com.kce.project.entity.Simulation;
+import java.util.List;
+import java.util.Optional;
+
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 
-import java.util.List;
+import com.kce.project.entity.Simulation;
 
 public interface SimulationRepository extends JpaRepository<Simulation, Long> {
 
-    List<Simulation> findByActiveTrue();
+    @EntityGraph(attributePaths = {
+            "createdBy",
+            "createdBy.user"
+    })
+    List<Simulation> findAll();
 
+    @EntityGraph(attributePaths = {
+            "createdBy",
+            "createdBy.user"
+    })
+    Optional<Simulation> findById(Long id);
+
+    @EntityGraph(attributePaths = {
+            "createdBy",
+            "createdBy.user"
+    })
+    List<Simulation> findByCreatedByTeacherId(Long teacherId);
+    
+    
+    
 }

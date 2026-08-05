@@ -1,12 +1,16 @@
 package com.kce.project.repository;
 
-import com.kce.project.entity.AssessmentResult;
+import java.util.List;
+
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 
-import java.util.List;
+import com.kce.project.entity.AssessmentResult;
 
 public interface AssessmentResultRepository extends JpaRepository<AssessmentResult, Long> {
 
-    List<AssessmentResult> findByStudentStudentId(Long studentId);
+	@EntityGraph(attributePaths = { "student", "assessment" })
+	List<AssessmentResult> findByStudentStudentId(Long studentId);
 
+	List<AssessmentResult> findByAssessmentSimulationCreatedByTeacherId(Long teacherId);
 }
