@@ -54,6 +54,14 @@ public class ClassServiceImpl implements ClassService {
     }
 
     @Override
+    public List<ClassResponseDTO> getClassesByTeacher(Long teacherId) {
+        return classRepository.findByTeacherTeacherId(teacherId)
+                .stream()
+                .map(classMapper::toResponse)
+                .collect(Collectors.toList());
+    }
+
+    @Override
     public ClassResponseDTO getClassById(Long classId) {
 
         SchoolClass schoolClass = classRepository.findById(classId)

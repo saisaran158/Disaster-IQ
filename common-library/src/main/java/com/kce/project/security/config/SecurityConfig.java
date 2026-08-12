@@ -56,13 +56,15 @@ public class SecurityConfig {
         return configuration.getAuthenticationManager();
     }
 
+
+
     @Bean
     public SecurityFilterChain securityFilterChain(
             HttpSecurity http)
             throws Exception {
 
         http
-
+                .cors(cors -> cors.disable())
                 .csrf(csrf -> csrf.disable())
 
                 .sessionManagement(session ->
@@ -75,6 +77,7 @@ public class SecurityConfig {
                 .authenticationProvider(authenticationProvider())
 
                 .authorizeHttpRequests(auth -> auth
+                        .requestMatchers(org.springframework.http.HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         .requestMatchers("/api/teacher/**").hasRole("TEACHER")

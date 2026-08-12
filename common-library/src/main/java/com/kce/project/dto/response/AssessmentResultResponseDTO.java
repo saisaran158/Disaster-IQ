@@ -21,4 +21,6 @@ public class AssessmentResultResponseDTO {
 
     private String recommendation;
 
+    private Long assignmentId;
+
 }

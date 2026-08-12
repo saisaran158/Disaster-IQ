@@ -77,12 +77,11 @@ public class TeacherDashboardServiceImpl implements TeacherDashboardService {
         double averageScore = 0;
 
         if (!results.isEmpty()) {
-
             averageScore = results.stream()
+                    .filter(r -> r.getPercentage() != null && r.getPercentage() > 0)
                     .mapToDouble(AssessmentResult::getPercentage)
                     .average()
                     .orElse(0);
-
         }
 
         int passedStudents =

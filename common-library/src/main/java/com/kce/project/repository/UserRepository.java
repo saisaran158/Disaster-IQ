@@ -10,6 +10,9 @@ import com.kce.project.enums.Role;
 
 public interface UserRepository extends JpaRepository<User, Long> {
 
+    java.util.List<User> findByRoleAndActive(Role role, boolean active);
+
+
     Optional<User> findByEmail(String email);
 
     boolean existsByEmail(String email);

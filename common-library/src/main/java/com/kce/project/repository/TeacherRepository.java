@@ -11,6 +11,10 @@ import java.util.Optional;
 
 public interface TeacherRepository extends JpaRepository<Teacher, Long> {
 
+    @EntityGraph(attributePaths = {"user", "school"})
+    Optional<Teacher> findByUserUserId(Long userId);
+
+
     boolean existsByEmployeeId(String employeeId);
 
     boolean existsByUser(User user);

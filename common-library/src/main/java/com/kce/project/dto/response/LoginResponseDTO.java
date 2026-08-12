@@ -20,4 +20,10 @@ public class LoginResponseDTO {
 
     private Role role;
 
+    private Long studentId;
+
+    private Long teacherId;
+
+    private Long parentId;
+
 }

@@ -31,4 +31,9 @@ public class AssignmentResponseDTO {
     private AssignmentStatus status;
 
     private String instructions;
+
+    // Student-specific fields (populated when fetching for a specific student)
+    private Double score;
+
+    private String studentStatus;
 }

@@ -13,6 +13,8 @@ public interface ClassService {
 
     List<ClassResponseDTO> getAllClasses();
 
+    List<ClassResponseDTO> getClassesByTeacher(Long teacherId);
+
     List<ClassResponseDTO> getClassesBySchool(Long schoolId);
 
     ClassResponseDTO updateClass(Long classId, ClassRequestDTO request);

@@ -17,6 +17,8 @@ public interface AssignmentService {
 
     List<AssignmentResponseDTO> getAssignmentsByClass(Long classId);
 
+    List<AssignmentResponseDTO> getAssignmentsForStudent(Long studentId, Long classId);
+
     AssignmentResponseDTO updateAssignment(Long assignmentId,
                                            AssignmentRequestDTO request);
 

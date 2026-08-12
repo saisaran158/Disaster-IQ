@@ -8,13 +8,17 @@ import com.kce.project.dto.response.AssessmentResultResponseDTO;
 import com.kce.project.entity.AIRecommendation;
 import com.kce.project.entity.Assessment;
 import com.kce.project.entity.AssessmentResult;
+import com.kce.project.entity.Assignment;
 import com.kce.project.entity.Question;
 import com.kce.project.entity.QuestionOption;
 import com.kce.project.entity.Student;
 import com.kce.project.entity.StudentAnswer;
+import com.kce.project.entity.StudentProgress;
+import com.kce.project.enums.SimulationStatus;
 import com.kce.project.repository.AIRecommendationRepository;
 import com.kce.project.repository.AssessmentRepository;
 import com.kce.project.repository.AssessmentResultRepository;
+import com.kce.project.repository.AssignmentRepository;
 import com.kce.project.repository.QuestionOptionRepository;
 import com.kce.project.repository.QuestionRepository;
 import com.kce.project.repository.StudentAnswerRepository;
@@ -26,6 +30,9 @@ import com.kce.project.exception.ResourceNotFoundException;
 import com.kce.project.exception.BadRequestException;
 
 import lombok.RequiredArgsConstructor;
+
+import java.time.LocalDateTime;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -47,6 +54,8 @@ public class AssessmentEngineServiceImpl implements AssessmentEngineService {
 	private final StudentProgressRepository progressRepository;
 
 	private final AIRecommendationRepository recommendationRepository;
+
+	private final AssignmentRepository assignmentRepository;
 
 	@Override
 	public AssessmentResultResponseDTO submitAssessment(AssessmentSubmissionDTO request) {
@@ -145,9 +154,47 @@ public class AssessmentEngineServiceImpl implements AssessmentEngineService {
 
 		recommendationRepository.save(aiRecommendation);
 
-		return AssessmentResultResponseDTO.builder().resultId(result.getResultId()).score(result.getScore())
-				.totalMarks(result.getTotalMarks()).percentage(result.getPercentage()).passed(result.getPassed())
-				.recommendation(recommendation).build();
+		// ── Mark StudentProgress as COMPLETED ──
+		Long assignmentId = request.getAssignmentId();
+		if (assignmentId != null) {
+			try {
+				Optional<Assignment> assignmentOpt = assignmentRepository.findById(assignmentId);
+				if (assignmentOpt.isPresent()) {
+					Assignment assignment = assignmentOpt.get();
+					Optional<StudentProgress> progressOpt =
+						progressRepository.findByStudentStudentIdAndAssignmentAssignmentId(
+							student.getStudentId(), assignmentId);
+
+					StudentProgress progress;
+					if (progressOpt.isPresent()) {
+						progress = progressOpt.get();
+					} else {
+						progress = StudentProgress.builder()
+							.student(student)
+							.assignment(assignment)
+							.startedAt(LocalDateTime.now())
+							.build();
+					}
+					progress.setStatus(SimulationStatus.COMPLETED);
+					progress.setCompletionPercentage(100);
+					progress.setCompletedAt(LocalDateTime.now());
+					progressRepository.save(progress);
+				}
+			} catch (Exception e) {
+				// Non-fatal: log but don't fail the submission
+				System.err.println("Warning: Could not update StudentProgress for assignmentId=" + assignmentId + ": " + e.getMessage());
+			}
+		}
+
+		return AssessmentResultResponseDTO.builder()
+				.resultId(result.getResultId())
+				.score(result.getScore())
+				.totalMarks(totalQuestions)
+				.percentage(result.getPercentage())
+				.passed(result.getPassed())
+				.recommendation(recommendation)
+				.assignmentId(assignmentId)
+				.build();
 	}
 
 }

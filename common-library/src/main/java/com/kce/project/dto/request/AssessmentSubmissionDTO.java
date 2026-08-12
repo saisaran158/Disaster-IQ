@@ -15,6 +15,8 @@ public class AssessmentSubmissionDTO {
 
     private Long assessmentId;
 
+    private Long assignmentId;
+
     private List<StudentAnswerDTO> answers;
 
 }
