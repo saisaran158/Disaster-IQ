@@ -24,4 +24,10 @@ public class SchoolResponse {
     private String phone;
 
     private String email;
+
+    private int studentsCount;
+
+    private int teachersCount;
+
+    private double averageScore;
 }

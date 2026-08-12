@@ -29,6 +29,8 @@ public class TeacherDashboardResponseDTO {
 
     private double averageScore;
 
+    private int completedAssignments;
+
     private int passedStudents;
 
     private int failedStudents;

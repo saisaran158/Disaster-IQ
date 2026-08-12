@@ -50,6 +50,13 @@ public class User extends BaseEntity {
     @Builder.Default
     private Boolean active = true;
 
+    private String district;
+
+    private String state;
+
+    @Column(name = "plain_password")
+    private String plainPassword;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "school_id")
     private School school;

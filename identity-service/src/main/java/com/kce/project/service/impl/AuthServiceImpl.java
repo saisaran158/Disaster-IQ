@@ -94,6 +94,7 @@ public class AuthServiceImpl implements AuthService {
                         .phone(request.getPhone())
                         .role(request.getRole())
                         .school(school)
+                        .plainPassword(request.getPassword())
                         .active((request.getRole() == Role.TEACHER || request.getRole() == Role.PARENT) ? false : true)
                         .build();
 

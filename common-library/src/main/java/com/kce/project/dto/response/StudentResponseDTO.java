@@ -34,4 +34,6 @@ public class StudentResponseDTO {
     private double averageScore;
 
     private String completionRate;
+
+    private String password;
 }

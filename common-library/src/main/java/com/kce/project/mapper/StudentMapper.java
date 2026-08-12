@@ -21,6 +21,7 @@ public class StudentMapper {
                 .section(student.getSchoolClass().getSection())
                 .rollNumber(student.getRollNumber())
                 .admissionNumber(student.getAdmissionNumber())
+                .password(student.getUser().getPlainPassword())
                 .build();
     }
 }

@@ -90,24 +90,24 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/schools/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.PUT, "/api/schools/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.DELETE, "/api/schools/**").hasRole("ADMIN")
-                        .requestMatchers("/api/schools/**").hasAnyRole("ADMIN", "TEACHER", "STUDENT", "PARENT")
+                        .requestMatchers("/api/schools/**").hasAnyRole("ADMIN", "TEACHER", "STUDENT", "PARENT", "COLLECTOR")
                         
                         // Teachers
                         .requestMatchers(HttpMethod.POST, "/api/teachers/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.DELETE, "/api/teachers/**").hasRole("ADMIN")
-                        .requestMatchers("/api/teachers/**").hasAnyRole("ADMIN", "TEACHER")
+                        .requestMatchers("/api/teachers/**").hasAnyRole("ADMIN", "TEACHER", "COLLECTOR")
                         
                         // Students
                         .requestMatchers(HttpMethod.POST, "/api/students/**").hasAnyRole("ADMIN", "TEACHER")
                         .requestMatchers(HttpMethod.PUT, "/api/students/**").hasAnyRole("ADMIN", "TEACHER")
                         .requestMatchers(HttpMethod.DELETE, "/api/students/**").hasAnyRole("ADMIN", "TEACHER")
-                        .requestMatchers("/api/students/**").hasAnyRole("ADMIN", "TEACHER", "STUDENT", "PARENT")
+                        .requestMatchers("/api/students/**").hasAnyRole("ADMIN", "TEACHER", "STUDENT", "PARENT", "COLLECTOR")
                         
                         // Classes
                         .requestMatchers(HttpMethod.POST, "/api/classes/**").hasAnyRole("ADMIN", "TEACHER")
                         .requestMatchers(HttpMethod.PUT, "/api/classes/**").hasAnyRole("ADMIN", "TEACHER")
                         .requestMatchers(HttpMethod.DELETE, "/api/classes/**").hasAnyRole("ADMIN", "TEACHER")
-                        .requestMatchers("/api/classes/**").hasAnyRole("ADMIN", "TEACHER", "STUDENT", "PARENT")
+                        .requestMatchers("/api/classes/**").hasAnyRole("ADMIN", "TEACHER", "STUDENT", "PARENT", "COLLECTOR")
                         
                         // Simulations
                         .requestMatchers(HttpMethod.POST, "/api/simulations/**").hasAnyRole("ADMIN", "TEACHER")

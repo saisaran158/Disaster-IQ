@@ -41,17 +41,17 @@ public class AdminDashboardServiceImpl implements AdminDashboardService {
 
         return AdminDashboardResponseDTO.builder()
 
-                .totalUsers(userRepository.count())
+                .totalUsers(userRepository.countByActive(true))
 
                 .totalSchools(schoolRepository.count())
 
-                .totalTeachers(userRepository.countByRole(Role.TEACHER))
+                .totalTeachers(userRepository.countByRoleAndActive(Role.TEACHER, true))
 
-                .totalStudents(userRepository.countByRole(Role.STUDENT))
+                .totalStudents(userRepository.countByRoleAndActive(Role.STUDENT, true))
 
-                .totalParents(userRepository.countByRole(Role.PARENT))
+                .totalParents(userRepository.countByRoleAndActive(Role.PARENT, true))
 
-                .totalCollectors(userRepository.countByRole(Role.COLLECTOR))
+                .totalCollectors(userRepository.countByRoleAndActive(Role.COLLECTOR, true))
 
                 .totalClasses(classRepository.count())
 
