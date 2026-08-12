@@ -12,6 +12,7 @@ import com.kce.project.enums.SimulationStatus;
 import com.kce.project.mapper.AssignmentMapper;
 import com.kce.project.repository.AssessmentRepository;
 import com.kce.project.repository.AssessmentResultRepository;
+import com.kce.project.repository.StudentRepository;
 import com.kce.project.repository.AssignmentRepository;
 import com.kce.project.repository.SchoolClassRepository;
 import com.kce.project.repository.SimulationRepository;
@@ -40,6 +41,16 @@ public class AssignmentServiceImpl implements AssignmentService {
     private final StudentProgressRepository progressRepository;
     private final AssessmentResultRepository resultRepository;
     private final AssessmentRepository assessmentRepository;
+    private final StudentRepository studentRepository;
+
+    private AssignmentResponseDTO mapToResponseWithCounts(Assignment assignment) {
+        AssignmentResponseDTO dto = assignmentMapper.toResponse(assignment);
+        if (assignment.getSchoolClass() != null) {
+            dto.setAssignedCount((int) studentRepository.countBySchoolClassClassId(assignment.getSchoolClass().getClassId()));
+        }
+        dto.setCompletedCount((int) progressRepository.countByAssignmentAssignmentIdAndStatus(assignment.getAssignmentId(), com.kce.project.enums.SimulationStatus.COMPLETED));
+        return dto;
+    }
 
     @Override
     public AssignmentResponseDTO createAssignment(AssignmentRequestDTO request) {
@@ -63,7 +74,7 @@ public class AssignmentServiceImpl implements AssignmentService {
                 .instructions(request.getInstructions())
                 .build();
 
-        return assignmentMapper.toResponse(
+        return mapToResponseWithCounts(
                 assignmentRepository.save(assignment));
     }
 
@@ -73,7 +84,7 @@ public class AssignmentServiceImpl implements AssignmentService {
         Assignment assignment = assignmentRepository.findById(assignmentId)
                 .orElseThrow(() -> new ResourceNotFoundException("Assignment not found"));
 
-        return assignmentMapper.toResponse(assignment);
+        return mapToResponseWithCounts(assignment);
     }
 
     @Override
@@ -81,7 +92,7 @@ public class AssignmentServiceImpl implements AssignmentService {
 
         return assignmentRepository.findAll()
                 .stream()
-                .map(assignmentMapper::toResponse)
+                .map(this::mapToResponseWithCounts)
                 .collect(Collectors.toList());
     }
 
@@ -90,7 +101,7 @@ public class AssignmentServiceImpl implements AssignmentService {
 
         return assignmentRepository.findByTeacherTeacherId(teacherId)
                 .stream()
-                .map(assignmentMapper::toResponse)
+                .map(this::mapToResponseWithCounts)
                 .collect(Collectors.toList());
     }
 
@@ -99,7 +110,7 @@ public class AssignmentServiceImpl implements AssignmentService {
 
         return assignmentRepository.findBySchoolClassClassId(classId)
                 .stream()
-                .map(assignmentMapper::toResponse)
+                .map(this::mapToResponseWithCounts)
                 .collect(Collectors.toList());
     }
 
@@ -108,7 +119,7 @@ public class AssignmentServiceImpl implements AssignmentService {
         List<Assignment> assignments = assignmentRepository.findBySchoolClassClassId(classId);
 
         return assignments.stream().map(assignment -> {
-            AssignmentResponseDTO dto = assignmentMapper.toResponse(assignment);
+            AssignmentResponseDTO dto = mapToResponseWithCounts(assignment);
 
             // Check student progress for this assignment
             Optional<StudentProgress> progressOpt =
@@ -170,7 +181,7 @@ public class AssignmentServiceImpl implements AssignmentService {
         assignment.setStatus(request.getStatus());
         assignment.setInstructions(request.getInstructions());
 
-        return assignmentMapper.toResponse(
+        return mapToResponseWithCounts(
                 assignmentRepository.save(assignment));
     }
 

@@ -28,6 +28,7 @@ public class RegisterRequestDTO {
     private Long schoolId;
 
     private String schoolName;
+    private String schoolDistrict;
     private String studentName;
     private String studentRoll;
     private String className;

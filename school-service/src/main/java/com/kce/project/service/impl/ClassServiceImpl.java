@@ -1,5 +1,7 @@
 package com.kce.project.service.impl;
 
+import com.kce.project.repository.AssessmentResultRepository;
+import com.kce.project.entity.AssessmentResult;
 import com.kce.project.dto.request.ClassRequestDTO;
 import com.kce.project.dto.response.ClassResponseDTO;
 import com.kce.project.entity.School;
@@ -25,6 +27,23 @@ public class ClassServiceImpl implements ClassService {
     private final SchoolClassRepository classRepository;
     private final SchoolRepository schoolRepository;
     private final ClassMapper classMapper;
+    private final AssessmentResultRepository assessmentResultRepository;
+
+    private ClassResponseDTO mapToResponseWithAvgScore(SchoolClass schoolClass) {
+        ClassResponseDTO dto = classMapper.toResponse(schoolClass);
+        List<AssessmentResult> results = assessmentResultRepository.findByStudentSchoolClassClassId(schoolClass.getClassId());
+        double avg = 0.0;
+        if (results != null && !results.isEmpty()) {
+            avg = results.stream()
+                .filter(r -> r.getPercentage() != null && r.getPercentage() > 0)
+                .mapToDouble(AssessmentResult::getPercentage)
+                .average()
+                .orElse(0.0);
+        }
+        // Round to nearest integer (or keep 1 decimal if needed, e.g. Math.round(avg))
+        dto.setAverageScore(Math.round(avg));
+        return dto;
+    }
 
     @Override
     public ClassResponseDTO createClass(ClassRequestDTO request) {
@@ -49,7 +68,7 @@ public class ClassServiceImpl implements ClassService {
                 .school(school)
                 .build();
 
-        return classMapper.toResponse(
+        return mapToResponseWithAvgScore(
                 classRepository.save(schoolClass));
     }
 
@@ -57,7 +76,7 @@ public class ClassServiceImpl implements ClassService {
     public List<ClassResponseDTO> getClassesByTeacher(Long teacherId) {
         return classRepository.findByTeacherTeacherId(teacherId)
                 .stream()
-                .map(classMapper::toResponse)
+                .map(this::mapToResponseWithAvgScore)
                 .collect(Collectors.toList());
     }
 
@@ -68,7 +87,7 @@ public class ClassServiceImpl implements ClassService {
                 .orElseThrow(() ->
                         new ResourceNotFoundException("Class not found"));
 
-        return classMapper.toResponse(schoolClass);
+        return mapToResponseWithAvgScore(schoolClass);
     }
 
     @Override
@@ -76,7 +95,7 @@ public class ClassServiceImpl implements ClassService {
 
         return classRepository.findAll()
                 .stream()
-                .map(classMapper::toResponse)
+                .map(this::mapToResponseWithAvgScore)
                 .collect(Collectors.toList());
     }
 
@@ -89,7 +108,7 @@ public class ClassServiceImpl implements ClassService {
 
         return classRepository.findBySchool(school)
                 .stream()
-                .map(classMapper::toResponse)
+                .map(this::mapToResponseWithAvgScore)
                 .collect(Collectors.toList());
     }
 
@@ -110,7 +129,7 @@ public class ClassServiceImpl implements ClassService {
         schoolClass.setAcademicYear(request.getAcademicYear());
         schoolClass.setSchool(school);
 
-        return classMapper.toResponse(
+        return mapToResponseWithAvgScore(
                 classRepository.save(schoolClass));
     }
 

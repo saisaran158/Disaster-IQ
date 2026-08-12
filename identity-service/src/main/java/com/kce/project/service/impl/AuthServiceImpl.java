@@ -64,11 +64,13 @@ public class AuthServiceImpl implements AuthService {
         if (request.getSchoolName() != null && !request.getSchoolName().trim().isEmpty()) {
             school = schoolRepository.findBySchoolName(request.getSchoolName().trim()).orElse(null);
             if (school == null) {
+                String dist = (request.getSchoolDistrict() != null && !request.getSchoolDistrict().trim().isEmpty())
+                        ? request.getSchoolDistrict().trim() : "Local District";
                 School newSchool = School.builder()
                         .schoolName(request.getSchoolName().trim())
-                        .district("Local District")
+                        .district(dist)
                         .state("State A")
-                        .address("Local District Address")
+                        .address(dist + " Address")
                         .email("contact@" + request.getSchoolName().toLowerCase().replaceAll("\\s+", "") + ".edu")
                         .phone("1234567890")
                         .build();

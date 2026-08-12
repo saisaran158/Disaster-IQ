@@ -32,6 +32,10 @@ public class AssignmentResponseDTO {
 
     private String instructions;
 
+    private int assignedCount;
+
+    private int completedCount;
+
     // Student-specific fields (populated when fetching for a specific student)
     private Double score;
 

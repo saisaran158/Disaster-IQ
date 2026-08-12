@@ -63,7 +63,8 @@ public class AssignmentController {
         if (user.getRole() == com.kce.project.enums.Role.PARENT) {
             Parent parent = parentRepository.findByUserUserId(user.getUserId()).orElse(null);
             if (parent != null && parent.getStudent() != null && parent.getStudent().getSchoolClass() != null) {
-                return ResponseEntity.ok(assignmentService.getAssignmentsByClass(parent.getStudent().getSchoolClass().getClassId()));
+                return ResponseEntity.ok(assignmentService.getAssignmentsForStudent(
+                    parent.getStudent().getStudentId(), parent.getStudent().getSchoolClass().getClassId()));
             }
             return ResponseEntity.ok(Collections.emptyList());
         }

@@ -20,4 +20,6 @@ public class ClassResponseDTO {
     private Long schoolId;
 
     private String schoolName;
+
+    private double averageScore;
 }

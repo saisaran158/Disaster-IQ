@@ -15,4 +15,8 @@ public interface StudentProgressRepository
             Long studentId,
             Long assignmentId);
 
+    long countByAssignmentAssignmentIdAndStatus(Long assignmentId, com.kce.project.enums.SimulationStatus status);
+
+    long countByStudentStudentIdAndStatus(Long studentId, com.kce.project.enums.SimulationStatus status);
+
 }

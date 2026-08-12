@@ -23,6 +23,12 @@ public class ParentDashboardResponseDTO {
 
     private double averageScore;
 
+    private int totalAssignments;
+
+    private int pendingAssignments;
+
+    private java.util.List<Double> assessmentScores;
+
     private String latestRecommendation;
 
 }

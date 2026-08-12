@@ -18,8 +18,8 @@ public class SimulationMapper {
                 .duration(simulation.getDuration())
                 .thumbnail(simulation.getThumbnail())
                 .active(simulation.getActive())
-                .teacherId(simulation.getCreatedBy().getTeacherId())
-                .teacherName(simulation.getCreatedBy().getUser().getFullName())
+                .teacherId(simulation.getCreatedBy() != null ? simulation.getCreatedBy().getTeacherId() : null)
+                .teacherName(simulation.getCreatedBy() != null && simulation.getCreatedBy().getUser() != null ? simulation.getCreatedBy().getUser().getFullName() : "System Admin")
                 .build();
     }
 }

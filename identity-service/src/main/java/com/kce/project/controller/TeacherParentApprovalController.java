@@ -26,6 +26,7 @@ public class TeacherParentApprovalController {
     private final TeacherRepository teacherRepository;
 
     @GetMapping("/pending")
+    @org.springframework.transaction.annotation.Transactional(readOnly = true)
     public ResponseEntity<List<Map<String, Object>>> getPendingParents() {
         String email = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication().getName();
         User teacherUser = userRepository.findByEmail(email)
@@ -33,7 +34,7 @@ public class TeacherParentApprovalController {
         com.kce.project.entity.Teacher teacher = teacherRepository.findByUserUserId(teacherUser.getUserId())
                 .orElseThrow(() -> new ResourceNotFoundException("Teacher details not found"));
 
-        List<User> pendingUsers = userRepository.findByRoleAndActive(Role.PARENT, false);
+        List<User> pendingUsers = userRepository.findByRoleAndActiveFetchSchool(Role.PARENT, false);
         List<Map<String, Object>> response = pendingUsers.stream()
                 .filter(user -> {
                     var parentOpt = parentRepository.findByUserUserId(user.getUserId());
@@ -60,6 +61,7 @@ public class TeacherParentApprovalController {
     }
 
     @PutMapping("/{userId}/approve")
+    @org.springframework.transaction.annotation.Transactional
     public ResponseEntity<Map<String, String>> approveParent(@PathVariable Long userId) {
         String email = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication().getName();
         User teacherUser = userRepository.findByEmail(email)
@@ -88,6 +90,7 @@ public class TeacherParentApprovalController {
     }
 
     @DeleteMapping("/{userId}/reject")
+    @org.springframework.transaction.annotation.Transactional
     public ResponseEntity<Map<String, String>> rejectParent(@PathVariable Long userId) {
         String email = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication().getName();
         User teacherUser = userRepository.findByEmail(email)

@@ -12,6 +12,9 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     java.util.List<User> findByRoleAndActive(Role role, boolean active);
 
+    @org.springframework.data.jpa.repository.Query("SELECT u FROM User u LEFT JOIN FETCH u.school WHERE u.role = :role AND u.active = :active")
+    java.util.List<User> findByRoleAndActiveFetchSchool(@org.springframework.data.repository.query.Param("role") Role role, @org.springframework.data.repository.query.Param("active") boolean active);
+
 
     Optional<User> findByEmail(String email);
 

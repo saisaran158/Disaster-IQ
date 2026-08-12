@@ -40,4 +40,6 @@ public interface AssignmentRepository extends JpaRepository<Assignment, Long> {
             "simulation"
     })
     List<Assignment> findBySchoolClassClassId(Long classId);
+
+    long countBySchoolClassClassId(Long classId);
 }

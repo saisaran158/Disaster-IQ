@@ -6,11 +6,16 @@ import com.kce.project.entity.School;
 import com.kce.project.entity.SchoolClass;
 import com.kce.project.entity.Student;
 import com.kce.project.entity.User;
+import com.kce.project.entity.AssessmentResult;
+import com.kce.project.enums.SimulationStatus;
 import com.kce.project.mapper.StudentMapper;
 import com.kce.project.repository.SchoolClassRepository;
 import com.kce.project.repository.SchoolRepository;
 import com.kce.project.repository.StudentRepository;
 import com.kce.project.repository.UserRepository;
+import com.kce.project.repository.AssessmentResultRepository;
+import com.kce.project.repository.AssignmentRepository;
+import com.kce.project.repository.StudentProgressRepository;
 import com.kce.project.service.StudentService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -31,6 +36,44 @@ public class StudentServiceImpl implements StudentService {
     private final SchoolRepository schoolRepository;
     private final SchoolClassRepository schoolClassRepository;
     private final StudentMapper studentMapper;
+    private final AssessmentResultRepository assessmentResultRepository;
+    private final AssignmentRepository assignmentRepository;
+    private final StudentProgressRepository studentProgressRepository;
+
+    private StudentResponseDTO mapToResponseWithMetrics(Student student) {
+        StudentResponseDTO dto = studentMapper.toResponse(student);
+        
+        // 1. Calculate Average Score
+        try {
+            List<AssessmentResult> results = assessmentResultRepository.findByStudentStudentId(student.getStudentId());
+            double avg = 0.0;
+            if (results != null && !results.isEmpty()) {
+                avg = results.stream()
+                    .filter(r -> r.getPercentage() != null && r.getPercentage() > 0)
+                    .mapToDouble(AssessmentResult::getPercentage)
+                    .average()
+                    .orElse(0.0);
+            }
+            dto.setAverageScore(Math.round(avg));
+        } catch (Exception e) {
+            dto.setAverageScore(0.0);
+        }
+
+        // 2. Calculate Completion Rate
+        try {
+            long totalAssignments = 0;
+            long completedAssignments = 0;
+            if (student.getSchoolClass() != null) {
+                totalAssignments = assignmentRepository.countBySchoolClassClassId(student.getSchoolClass().getClassId());
+            }
+            completedAssignments = studentProgressRepository.countByStudentStudentIdAndStatus(student.getStudentId(), SimulationStatus.COMPLETED);
+            dto.setCompletionRate(completedAssignments + "/" + totalAssignments);
+        } catch (Exception e) {
+            dto.setCompletionRate("0/0");
+        }
+
+        return dto;
+    }
 
     @Override
     public StudentResponseDTO createStudent(StudentRequestDTO request) {
@@ -63,7 +106,7 @@ public class StudentServiceImpl implements StudentService {
                 .admissionNumber(request.getAdmissionNumber())
                 .build();
 
-        return studentMapper.toResponse(studentRepository.save(student));
+        return mapToResponseWithMetrics(studentRepository.save(student));
     }
 
     @Override
@@ -73,7 +116,7 @@ public class StudentServiceImpl implements StudentService {
                 .orElseThrow(() ->
                         new ResourceNotFoundException("Student not found"));
 
-        return studentMapper.toResponse(student);
+        return mapToResponseWithMetrics(student);
     }
 
     @Override
@@ -81,7 +124,7 @@ public class StudentServiceImpl implements StudentService {
 
         return studentRepository.findAll()
                 .stream()
-                .map(studentMapper::toResponse)
+                .map(this::mapToResponseWithMetrics)
                 .collect(Collectors.toList());
     }
 
@@ -90,7 +133,7 @@ public class StudentServiceImpl implements StudentService {
 
         return studentRepository.findBySchoolSchoolId(schoolId)
                 .stream()
-                .map(studentMapper::toResponse)
+                .map(this::mapToResponseWithMetrics)
                 .collect(Collectors.toList());
     }
 
@@ -99,7 +142,7 @@ public class StudentServiceImpl implements StudentService {
 
         return studentRepository.findBySchoolClassClassId(classId)
                 .stream()
-                .map(studentMapper::toResponse)
+                .map(this::mapToResponseWithMetrics)
                 .collect(Collectors.toList());
     }
 
@@ -129,7 +172,7 @@ public class StudentServiceImpl implements StudentService {
         student.setRollNumber(request.getRollNumber());
         student.setAdmissionNumber(request.getAdmissionNumber());
 
-        return studentMapper.toResponse(studentRepository.save(student));
+        return mapToResponseWithMetrics(studentRepository.save(student));
     }
 
     @Override

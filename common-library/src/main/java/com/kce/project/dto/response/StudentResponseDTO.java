@@ -30,4 +30,8 @@ public class StudentResponseDTO {
     private String rollNumber;
 
     private String admissionNumber;
+
+    private double averageScore;
+
+    private String completionRate;
 }
