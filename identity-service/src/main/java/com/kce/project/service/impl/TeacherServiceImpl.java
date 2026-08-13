@@ -1,23 +1,25 @@
 package com.kce.project.service.impl;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import com.kce.project.dto.request.TeacherRequestDTO;
 import com.kce.project.dto.response.TeacherResponseDTO;
 import com.kce.project.entity.School;
 import com.kce.project.entity.Teacher;
 import com.kce.project.entity.User;
+import com.kce.project.exception.ResourceAlreadyExistsException;
+import com.kce.project.exception.ResourceNotFoundException;
 import com.kce.project.mapper.TeacherMapper;
 import com.kce.project.repository.SchoolRepository;
 import com.kce.project.repository.TeacherRepository;
 import com.kce.project.repository.UserRepository;
 import com.kce.project.service.TeacherService;
-import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-import com.kce.project.exception.ResourceNotFoundException;
-import com.kce.project.exception.ResourceAlreadyExistsException;
 
-import java.util.List;
-import java.util.stream.Collectors;
+import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor

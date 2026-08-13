@@ -1,21 +1,28 @@
 package com.kce.project.controller;
 
-import com.kce.project.entity.User;
-import com.kce.project.entity.AssessmentResult;
-import com.kce.project.enums.Role;
-import com.kce.project.exception.ResourceNotFoundException;
-import com.kce.project.repository.TeacherRepository;
-import com.kce.project.repository.UserRepository;
-import com.kce.project.repository.AssignmentRepository;
-import com.kce.project.repository.AssessmentResultRepository;
-import lombok.RequiredArgsConstructor;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.kce.project.entity.AssessmentResult;
+import com.kce.project.entity.User;
+import com.kce.project.enums.Role;
+import com.kce.project.exception.ResourceNotFoundException;
+import com.kce.project.repository.AssessmentResultRepository;
+import com.kce.project.repository.AssignmentRepository;
+import com.kce.project.repository.TeacherRepository;
+import com.kce.project.repository.UserRepository;
+
+import lombok.RequiredArgsConstructor;
 
 @RestController
 @RequestMapping("/api/admin/teachers")

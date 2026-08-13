@@ -1,30 +1,32 @@
 package com.kce.project.service.impl;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import com.kce.project.dto.request.StudentRequestDTO;
 import com.kce.project.dto.response.StudentResponseDTO;
+import com.kce.project.entity.AssessmentResult;
 import com.kce.project.entity.School;
 import com.kce.project.entity.SchoolClass;
 import com.kce.project.entity.Student;
 import com.kce.project.entity.User;
-import com.kce.project.entity.AssessmentResult;
 import com.kce.project.enums.SimulationStatus;
+import com.kce.project.exception.ResourceAlreadyExistsException;
+import com.kce.project.exception.ResourceNotFoundException;
 import com.kce.project.mapper.StudentMapper;
-import com.kce.project.repository.SchoolClassRepository;
-import com.kce.project.repository.SchoolRepository;
-import com.kce.project.repository.StudentRepository;
-import com.kce.project.repository.UserRepository;
 import com.kce.project.repository.AssessmentResultRepository;
 import com.kce.project.repository.AssignmentRepository;
+import com.kce.project.repository.SchoolClassRepository;
+import com.kce.project.repository.SchoolRepository;
 import com.kce.project.repository.StudentProgressRepository;
+import com.kce.project.repository.StudentRepository;
+import com.kce.project.repository.UserRepository;
 import com.kce.project.service.StudentService;
-import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-import com.kce.project.exception.ResourceNotFoundException;
-import com.kce.project.exception.ResourceAlreadyExistsException;
 
-import java.util.List;
-import java.util.stream.Collectors;
+import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor

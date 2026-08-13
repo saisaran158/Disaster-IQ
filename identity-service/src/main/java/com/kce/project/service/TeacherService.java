@@ -1,9 +1,9 @@
 package com.kce.project.service;
 
+import java.util.List;
+
 import com.kce.project.dto.request.TeacherRequestDTO;
 import com.kce.project.dto.response.TeacherResponseDTO;
-
-import java.util.List;
 
 public interface TeacherService {
 

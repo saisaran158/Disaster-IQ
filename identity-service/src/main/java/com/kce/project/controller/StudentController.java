@@ -1,31 +1,38 @@
 package com.kce.project.controller;
 
-import com.kce.project.dto.request.StudentRequestDTO;
-import com.kce.project.dto.response.StudentResponseDTO;
-import com.kce.project.service.StudentService;
-import com.kce.project.repository.UserRepository;
-import com.kce.project.repository.StudentRepository;
-import com.kce.project.repository.ParentRepository;
-import com.kce.project.entity.User;
-import com.kce.project.entity.Student;
-import com.kce.project.repository.TeacherRepository;
-import com.kce.project.repository.SchoolClassRepository;
-import com.kce.project.entity.Teacher;
-import com.kce.project.entity.Parent;
-import com.kce.project.entity.SchoolClass;
-import com.kce.project.mapper.StudentMapper;
-import com.kce.project.exception.ResourceNotFoundException;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-import jakarta.validation.Valid;
-import lombok.RequiredArgsConstructor;
-
-import java.util.List;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.stream.Collectors;
+import java.util.List;
+
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.kce.project.dto.request.StudentRequestDTO;
+import com.kce.project.dto.response.StudentResponseDTO;
+import com.kce.project.entity.Parent;
+import com.kce.project.entity.SchoolClass;
+import com.kce.project.entity.Student;
+import com.kce.project.entity.Teacher;
+import com.kce.project.entity.User;
+import com.kce.project.mapper.StudentMapper;
+import com.kce.project.repository.ParentRepository;
+import com.kce.project.repository.SchoolClassRepository;
+import com.kce.project.repository.StudentRepository;
+import com.kce.project.repository.TeacherRepository;
+import com.kce.project.repository.UserRepository;
+import com.kce.project.service.StudentService;
+
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 
 @RestController
 @RequestMapping("/api/students")

@@ -1,34 +1,35 @@
 package com.kce.project.service.impl;
 
-import com.kce.project.dto.request.LoginRequestDTO;
-import com.kce.project.dto.request.RegisterRequestDTO;
-import com.kce.project.dto.response.LoginResponseDTO;
-import com.kce.project.dto.response.RegisterResponseDTO;
-import com.kce.project.entity.School;
-import com.kce.project.entity.User;
-import com.kce.project.exception.BadRequestException;
-import com.kce.project.exception.ResourceAlreadyExistsException;
-import com.kce.project.exception.ResourceNotFoundException;
-import com.kce.project.repository.SchoolRepository;
-import com.kce.project.repository.UserRepository;
-import com.kce.project.enums.Role;
-import com.kce.project.entity.Student;
-import com.kce.project.entity.Teacher;
-import com.kce.project.entity.Parent;
-import com.kce.project.repository.StudentRepository;
-import com.kce.project.repository.TeacherRepository;
-import com.kce.project.repository.ParentRepository;
-import com.kce.project.repository.SchoolClassRepository;
-import com.kce.project.security.jwt.JwtService;
-import com.kce.project.service.AuthService;
-
-import lombok.RequiredArgsConstructor;
-
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+
+import com.kce.project.dto.request.LoginRequestDTO;
+import com.kce.project.dto.request.RegisterRequestDTO;
+import com.kce.project.dto.request.UpdateProfileRequestDTO;
+import com.kce.project.dto.response.LoginResponseDTO;
+import com.kce.project.dto.response.RegisterResponseDTO;
+import com.kce.project.dto.response.UserProfileResponseDTO;
+import com.kce.project.entity.Parent;
+import com.kce.project.entity.School;
+import com.kce.project.entity.Student;
+import com.kce.project.entity.Teacher;
+import com.kce.project.entity.User;
+import com.kce.project.enums.Role;
+import com.kce.project.exception.BadRequestException;
+import com.kce.project.exception.ResourceAlreadyExistsException;
+import com.kce.project.repository.ParentRepository;
+import com.kce.project.repository.SchoolClassRepository;
+import com.kce.project.repository.SchoolRepository;
+import com.kce.project.repository.StudentRepository;
+import com.kce.project.repository.TeacherRepository;
+import com.kce.project.repository.UserRepository;
+import com.kce.project.security.jwt.JwtService;
+import com.kce.project.service.AuthService;
+
+import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
@@ -47,6 +48,10 @@ public class AuthServiceImpl implements AuthService {
     private final AuthenticationManager authenticationManager;
 
     private final JwtService jwtService;
+
+    private final org.springframework.mail.javamail.JavaMailSender mailSender;
+
+    private static final java.util.Map<String, String> otpStore = new java.util.concurrent.ConcurrentHashMap<>();
 
     @Override
     public RegisterResponseDTO register(RegisterRequestDTO request) {
@@ -264,5 +269,126 @@ public class AuthServiceImpl implements AuthService {
                 .teacherId(teacherId)
                 .parentId(parentId)
                 .build();
+    }
+
+    @Override
+    @org.springframework.transaction.annotation.Transactional
+    public UserProfileResponseDTO updateProfile(String email, UpdateProfileRequestDTO request) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new BadRequestException("User not found"));
+
+        if (request.getFullName() != null && !request.getFullName().trim().isEmpty()) {
+            user.setFullName(request.getFullName().trim());
+        }
+        if (request.getPhone() != null && !request.getPhone().trim().isEmpty()) {
+            // Check uniqueness only if phone is changing
+            if (!request.getPhone().trim().equals(user.getPhone())) {
+                if (userRepository.existsByPhone(request.getPhone().trim())) {
+                    throw new BadRequestException("Phone number already in use by another account.");
+                }
+            }
+            user.setPhone(request.getPhone().trim());
+        }
+
+        userRepository.save(user);
+
+        return UserProfileResponseDTO.builder()
+                .userId(user.getUserId())
+                .fullName(user.getFullName())
+                .email(user.getEmail())
+                .phone(user.getPhone())
+                .role(user.getRole().name())
+                .build();
+    }
+
+    @Override
+    @org.springframework.transaction.annotation.Transactional(readOnly = true)
+    public UserProfileResponseDTO getProfile(String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new BadRequestException("User not found"));
+
+        return UserProfileResponseDTO.builder()
+                .userId(user.getUserId())
+                .fullName(user.getFullName())
+                .email(user.getEmail())
+                .phone(user.getPhone())
+                .role(user.getRole().name())
+                .build();
+    }
+
+    @Override
+    public java.util.Map<String, String> generateOtp(com.kce.project.dto.request.ForgotPasswordRequestDTO request) {
+        String email = request.getEmail();
+        if (email == null || email.trim().isEmpty()) {
+            throw new BadRequestException("Email is required.");
+        }
+
+        User user = userRepository.findByEmail(email.trim())
+                .orElseThrow(() -> new BadRequestException("No account registered with this email."));
+
+        if (user.getRole() != Role.TEACHER && user.getRole() != Role.PARENT) {
+            throw new BadRequestException("Password reset via OTP is only available for Parents and Teachers.");
+        }
+
+        String otp = String.format("%04d", new java.util.Random().nextInt(10000));
+        otpStore.put(email.trim(), otp);
+
+        System.out.println("----------------------------------------");
+        System.out.println("[OTP RESET] OTP for user " + email + " is: " + otp);
+        System.err.println("[OTP RESET] OTP for user " + email + " is: " + otp);
+        System.out.println("----------------------------------------");
+
+        try {
+            org.springframework.mail.SimpleMailMessage message = new org.springframework.mail.SimpleMailMessage();
+            message.setFrom("disaster.iq8@gmail.com");
+            message.setTo(email.trim());
+            message.setSubject("DisasterIQ Password Reset Verification Code");
+            message.setText("Hello,\n\nYou requested a password reset on DisasterIQ. Your 4-digit OTP verification code is:\n\n"
+                    + otp + "\n\nIf you did not request this, please ignore this email.\n\nBest regards,\nDisasterIQ Team");
+            mailSender.send(message);
+            System.out.println("[EMAIL SUCCESS] Sent OTP to " + email);
+        } catch (Exception e) {
+            System.err.println("[EMAIL ERROR] Failed to send email to " + email + ": " + e.getMessage());
+            e.printStackTrace();
+        }
+
+        java.util.Map<String, String> response = new java.util.HashMap<>();
+        response.put("message", "Verification code sent to " + email);
+        // We also return it in the payload for local development/test ease
+        response.put("otp", otp);
+        response.put("email", email);
+        return response;
+    }
+
+    @Override
+    @org.springframework.transaction.annotation.Transactional
+    public void resetPassword(com.kce.project.dto.request.ResetPasswordRequestDTO request) {
+        String email = request.getEmail();
+        String otp = request.getOtp();
+        String newPassword = request.getNewPassword();
+
+        if (email == null || email.trim().isEmpty() || otp == null || otp.trim().isEmpty() || newPassword == null || newPassword.trim().isEmpty()) {
+            throw new BadRequestException("Email, OTP code, and new password are required.");
+        }
+
+        User user = userRepository.findByEmail(email.trim())
+                .orElseThrow(() -> new BadRequestException("User not found."));
+
+        if (user.getRole() != Role.TEACHER && user.getRole() != Role.PARENT) {
+            throw new BadRequestException("Password reset via OTP is only available for Parents and Teachers.");
+        }
+
+        String storedOtp = otpStore.get(email.trim());
+        if (storedOtp == null || !storedOtp.equals(otp.trim())) {
+            throw new BadRequestException("Invalid or expired OTP verification code.");
+        }
+
+        // Update password
+        user.setPassword(passwordEncoder.encode(newPassword.trim()));
+        user.setPlainPassword(newPassword.trim());
+        userRepository.save(user);
+
+        // Remove OTP
+        otpStore.remove(email.trim());
     }
 }
