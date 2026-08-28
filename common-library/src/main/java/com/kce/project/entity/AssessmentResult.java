@@ -37,6 +37,10 @@ public class AssessmentResult extends BaseEntity {
     @JoinColumn(name = "assessment_id")
     private Assessment assessment;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "assignment_id")
+    private Assignment assignment;
+
     private Integer score;
 
     private Integer totalMarks;

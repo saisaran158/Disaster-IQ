@@ -25,11 +25,11 @@ public class Parent extends BaseEntity {
     @Column(name = "parent_id")
     private Long parentId;
 
-    @OneToOne(fetch = FetchType.LAZY)
+    @OneToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "user_id", unique = true)
     private User user;
 
-    @OneToOne(fetch = FetchType.LAZY)
+    @OneToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "student_id", unique = true)
     private Student student;
 

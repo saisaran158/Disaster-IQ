@@ -11,6 +11,8 @@ public interface SchoolRepository extends JpaRepository<School, Long> {
 
     java.util.Optional<School> findBySchoolName(String schoolName);
 
+    java.util.Optional<School> findBySchoolNameIgnoreCase(String schoolName);
+
     java.util.List<School> findByDistrictIgnoreCase(String district);
 
 }

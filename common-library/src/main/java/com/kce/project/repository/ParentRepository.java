@@ -8,4 +8,5 @@ public interface ParentRepository extends JpaRepository<Parent, Long> {
 
     Optional<Parent> findByUserUserId(Long userId);
 
+    Optional<Parent> findByStudentStudentId(Long studentId);
 }

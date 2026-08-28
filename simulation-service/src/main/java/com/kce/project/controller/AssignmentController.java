@@ -93,6 +93,16 @@ public class AssignmentController {
             student.getStudentId(), student.getSchoolClass().getClassId()));
     }
 
+    @GetMapping("/teacher/me")
+    public ResponseEntity<List<AssignmentResponseDTO>> getMyTeacherAssignments() {
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        User user = userRepository.findByEmail(email).orElse(null);
+        if (user == null) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        Teacher teacher = teacherRepository.findByUserUserId(user.getUserId()).orElse(null);
+        if (teacher == null) return ResponseEntity.ok(Collections.emptyList());
+        return ResponseEntity.ok(assignmentService.getAssignmentsByTeacher(teacher.getTeacherId()));
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<AssignmentResponseDTO> getAssignmentById(
             @PathVariable Long id) {

@@ -66,6 +66,25 @@ public class AssessmentEngineServiceImpl implements AssessmentEngineService {
 		Assessment assessment = assessmentRepository.findById(request.getAssessmentId())
 				.orElseThrow(() -> new ResourceNotFoundException("Assessment not found"));
 
+		// Prevent retaking the assignment/assessment if already completed
+		Assignment assignment = null;
+		Long assignmentId = request.getAssignmentId();
+		if (assignmentId != null) {
+			assignment = assignmentRepository.findById(assignmentId).orElse(null);
+			Optional<StudentProgress> progressOpt = progressRepository.findByStudentStudentIdAndAssignmentAssignmentId(
+					student.getStudentId(), assignmentId);
+			if (progressOpt.isPresent() && progressOpt.get().getStatus() == SimulationStatus.COMPLETED) {
+				throw new BadRequestException("You have already completed this assignment and cannot attend it again.");
+			}
+		} else {
+			// fallback check by assessmentId
+			boolean alreadyTaken = resultRepository.findByStudentStudentId(student.getStudentId()).stream()
+					.anyMatch(r -> r.getAssessment().getAssessmentId().equals(assessment.getAssessmentId()));
+			if (alreadyTaken) {
+				throw new BadRequestException("You have already completed this assessment and cannot attend it again.");
+			}
+		}
+
 		int score = 0;
 
 		int totalQuestions = questionRepository.findByAssessmentAssessmentId(assessment.getAssessmentId()).size();
@@ -74,7 +93,7 @@ public class AssessmentEngineServiceImpl implements AssessmentEngineService {
 		}
 
 		// Create AssessmentResult first
-		AssessmentResult result = AssessmentResult.builder().student(student).assessment(assessment).score(0)
+		AssessmentResult result = AssessmentResult.builder().student(student).assessment(assessment).assignment(assignment).score(0)
 				.totalMarks(assessment.getTotalMarks()).percentage(0.0).passed(false).build();
 
 		result = resultRepository.save(result);
@@ -155,12 +174,11 @@ public class AssessmentEngineServiceImpl implements AssessmentEngineService {
 		recommendationRepository.save(aiRecommendation);
 
 		// ── Mark StudentProgress as COMPLETED ──
-		Long assignmentId = request.getAssignmentId();
 		if (assignmentId != null) {
 			try {
 				Optional<Assignment> assignmentOpt = assignmentRepository.findById(assignmentId);
 				if (assignmentOpt.isPresent()) {
-					Assignment assignment = assignmentOpt.get();
+					assignment = assignmentOpt.get();
 					Optional<StudentProgress> progressOpt =
 						progressRepository.findByStudentStudentIdAndAssignmentAssignmentId(
 							student.getStudentId(), assignmentId);

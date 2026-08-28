@@ -45,8 +45,12 @@ public class ParentDashboardServiceImpl
         long pendingAssignments = totalAssignments - completedAssignments;
         if (pendingAssignments < 0) pendingAssignments = 0;
 
+        // Only include assessment results tied to still-active assignments
         List<AssessmentResult> results =
-                resultRepository.findByStudentStudentId(studentId);
+                resultRepository.findByStudentStudentId(studentId)
+                        .stream()
+                        .filter(r -> r.getAssignment() != null && assignmentRepository.existsById(r.getAssignment().getAssignmentId()))
+                        .collect(java.util.stream.Collectors.toList());
 
         double average = 0;
 

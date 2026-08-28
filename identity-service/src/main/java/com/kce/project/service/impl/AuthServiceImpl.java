@@ -67,7 +67,7 @@ public class AuthServiceImpl implements AuthService {
         School school = null;
 
         if (request.getSchoolName() != null && !request.getSchoolName().trim().isEmpty()) {
-            school = schoolRepository.findBySchoolName(request.getSchoolName().trim()).orElse(null);
+            school = schoolRepository.findBySchoolNameIgnoreCase(request.getSchoolName().trim()).orElse(null);
             if (school == null) {
                 String dist = (request.getSchoolDistrict() != null && !request.getSchoolDistrict().trim().isEmpty())
                         ? request.getSchoolDistrict().trim() : "Local District";
@@ -121,14 +121,22 @@ public class AuthServiceImpl implements AuthService {
                 // Ignore any security context exception
             }
 
-            var schoolClass = schoolClassRepository.findAll().stream().findFirst().orElse(null);
+            var schoolClass = (loggedInTeacher != null)
+                    ? schoolClassRepository.findByTeacherTeacherId(loggedInTeacher.getTeacherId()).stream().findFirst().orElse(null)
+                    : schoolClassRepository.findAll().stream().findFirst().orElse(null);
+
             if (request.getClassName() != null && !request.getClassName().trim().isEmpty()) {
                 final String clsName = request.getClassName().trim();
                 final String secName = request.getSection() != null ? request.getSection().trim() : "A";
+                final Teacher currentTeacher = loggedInTeacher;
+
                 schoolClass = schoolClassRepository.findAll().stream()
-                        .filter(c -> c.getClassName().equalsIgnoreCase(clsName) && c.getSection().equalsIgnoreCase(secName))
+                        .filter(c -> c.getClassName().equalsIgnoreCase(clsName) 
+                                && c.getSection().equalsIgnoreCase(secName)
+                                && (currentTeacher == null || (c.getTeacher() != null && c.getTeacher().getTeacherId().equals(currentTeacher.getTeacherId()))))
                         .findFirst()
                         .orElse(null);
+
                 if (schoolClass == null) {
                     com.kce.project.entity.SchoolClass newCls = com.kce.project.entity.SchoolClass.builder()
                             .className(clsName)
@@ -137,9 +145,6 @@ public class AuthServiceImpl implements AuthService {
                             .teacher(loggedInTeacher)
                             .build();
                     schoolClass = schoolClassRepository.save(newCls);
-                } else if (loggedInTeacher != null) {
-                    schoolClass.setTeacher(loggedInTeacher);
-                    schoolClass = schoolClassRepository.save(schoolClass);
                 }
             }
             String rollNo = (request.getStudentRoll() != null && !request.getStudentRoll().trim().isEmpty())
@@ -165,7 +170,11 @@ public class AuthServiceImpl implements AuthService {
         } else if (newUser.getRole() == Role.PARENT) {
             Student student = null;
             if (request.getStudentRoll() != null && !request.getStudentRoll().trim().isEmpty()) {
-                student = studentRepository.findByRollNumber(request.getStudentRoll().trim()).orElse(null);
+                final String sRoll = request.getStudentRoll().trim();
+                student = studentRepository.findAll().stream()
+                        .filter(s -> s.getRollNumber() != null && s.getRollNumber().equalsIgnoreCase(sRoll))
+                        .findFirst()
+                        .orElse(null);
             }
             if (student == null && request.getStudentName() != null && !request.getStudentName().trim().isEmpty()) {
                 final String sName = request.getStudentName().trim();
@@ -175,33 +184,7 @@ public class AuthServiceImpl implements AuthService {
                         .orElse(null);
             }
             if (student == null) {
-                // Auto-create a student user and student record if none matches
-                String stdName = request.getStudentName() != null ? request.getStudentName().trim() : "Student Child";
-                String stdRoll = request.getStudentRoll() != null ? request.getStudentRoll().trim() : "ROLL-" + System.currentTimeMillis();
-                String stdEmail = stdName.toLowerCase().replaceAll("\\s+", "") + stdRoll.toLowerCase() + "@disasteriq.com";
-                if (userRepository.existsByEmail(stdEmail)) {
-                    stdEmail = "std" + System.currentTimeMillis() + "@disasteriq.com";
-                }
-                com.kce.project.entity.User stdUser = com.kce.project.entity.User.builder()
-                        .fullName(stdName)
-                        .email(stdEmail)
-                        .password(passwordEncoder.encode("student123"))
-                        .phone("9876543210")
-                        .role(Role.STUDENT)
-                        .school(school)
-                        .active(true)
-                        .build();
-                stdUser = userRepository.save(stdUser);
-
-                var schoolClass = schoolClassRepository.findAll().stream().findFirst().orElse(null);
-                student = Student.builder()
-                        .user(stdUser)
-                        .school(school)
-                        .schoolClass(schoolClass)
-                        .rollNumber(stdRoll)
-                        .admissionNumber("ADM-" + stdUser.getUserId())
-                        .build();
-                student = studentRepository.save(student);
+                throw new BadRequestException("Student doesn't exist");
             }
 
             Parent parent = Parent.builder()
@@ -224,16 +207,26 @@ public class AuthServiceImpl implements AuthService {
     @Override
     public LoginResponseDTO login(LoginRequestDTO request) {
 
+        com.kce.project.entity.User user = userRepository.findByEmail(request.getEmail())
+                .orElseThrow(() ->
+                        new BadRequestException("Invalid Email or Password"));
+
+        if (Boolean.FALSE.equals(user.getActive())) {
+            if (user.getRole() == Role.TEACHER) {
+                throw new BadRequestException("Teacher account is pending Admin approval.");
+            } else if (user.getRole() == Role.PARENT) {
+                throw new BadRequestException("Parent account is pending Teacher approval.");
+            } else {
+                throw new BadRequestException("Your account is pending approval.");
+            }
+        }
+
         authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
                         request.getEmail(),
                         request.getPassword()
                 )
         );
-
-        com.kce.project.entity.User user = userRepository.findByEmail(request.getEmail())
-                .orElseThrow(() ->
-                        new BadRequestException("Invalid Email or Password"));
 
         UserDetails userDetails = org.springframework.security.core.userdetails.User
                 .builder()

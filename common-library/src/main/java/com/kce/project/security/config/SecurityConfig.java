@@ -84,6 +84,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         .requestMatchers("/api/teacher/**").hasRole("TEACHER")
                         .requestMatchers("/api/student/**").hasRole("STUDENT")
+                        .requestMatchers(HttpMethod.POST, "/api/parent/dashboard/notify-email").hasAnyRole("STUDENT", "PARENT")
                         .requestMatchers("/api/parent/**").hasRole("PARENT")
                         .requestMatchers("/api/collector/**").hasRole("COLLECTOR")
                         

@@ -1,6 +1,7 @@
 package com.kce.project.service.impl;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -64,8 +65,14 @@ public class TeacherDashboardServiceImpl implements TeacherDashboardService {
                 .filter(a -> a != null)
                 .count();
 
+        java.util.Set<Long> assignedSimulationIds = assignments.stream()
+                .filter(a -> a.getSimulation() != null)
+                .map(a -> a.getSimulation().getSimulationId())
+                .collect(Collectors.toSet());
+
         List<AssessmentResult> results = classes.stream()
                 .flatMap(c -> resultRepository.findByStudentSchoolClassClassId(c.getClassId()).stream())
+                .filter(r -> r.getAssignment() != null && assignmentRepository.existsById(r.getAssignment().getAssignmentId()))
                 .toList();
 
         double averageScore = 0;

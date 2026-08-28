@@ -130,17 +130,24 @@ public class AssignmentServiceImpl implements AssignmentService {
                 StudentProgress progress = progressOpt.get();
                 if (progress.getStatus() == SimulationStatus.COMPLETED) {
                     dto.setStudentStatus("COMPLETED");
-                    // Fetch score from assessment results for this simulation
+                    // Fetch score from assessment results directly matching this assignment ID
                     try {
-                        assessmentRepository.findBySimulationSimulationId(assignment.getSimulation().getSimulationId())
-                            .ifPresent(assess -> {
-                                List<AssessmentResult> results =
-                                    resultRepository.findByStudentStudentId(studentId);
-                                results.stream()
-                                    .filter(r -> r.getAssessment().getAssessmentId().equals(assess.getAssessmentId()))
-                                    .findFirst()
-                                    .ifPresent(r -> dto.setScore(r.getPercentage()));
-                            });
+                        resultRepository.findByStudentStudentIdAndAssignmentAssignmentId(studentId, assignment.getAssignmentId())
+                            .ifPresentOrElse(
+                                r -> dto.setScore(r.getPercentage()),
+                                () -> {
+                                    // Fallback: search by assessment/simulation for older records
+                                    assessmentRepository.findBySimulationSimulationId(assignment.getSimulation().getSimulationId())
+                                        .ifPresent(assess -> {
+                                            List<AssessmentResult> results =
+                                                resultRepository.findByStudentStudentId(studentId);
+                                            results.stream()
+                                                .filter(r -> r.getAssessment().getAssessmentId().equals(assess.getAssessmentId()))
+                                                .findFirst()
+                                                .ifPresent(r -> dto.setScore(r.getPercentage()));
+                                        });
+                                }
+                            );
                     } catch (Exception e) {
                         // skip score if assessment not found
                     }
@@ -190,6 +197,11 @@ public class AssignmentServiceImpl implements AssignmentService {
 
         Assignment assignment = assignmentRepository.findById(assignmentId)
                 .orElseThrow(() -> new ResourceNotFoundException("Assignment not found"));
+
+        progressRepository.deleteByAssignmentAssignmentId(assignmentId);
+
+        List<AssessmentResult> results = resultRepository.findByAssignmentAssignmentId(assignmentId);
+        resultRepository.deleteAll(results);
 
         assignmentRepository.delete(assignment);
     }

@@ -47,11 +47,21 @@ public class StudentServiceImpl implements StudentService {
         
         // 1. Calculate Average Score
         try {
+            Long classId = student.getSchoolClass() != null ? student.getSchoolClass().getClassId() : null;
+            List<com.kce.project.entity.Assignment> assignments = classId != null 
+                    ? assignmentRepository.findBySchoolClassClassId(classId) 
+                    : java.util.Collections.emptyList();
+            java.util.Set<Long> assignedSimulationIds = assignments.stream()
+                    .filter(a -> a.getSimulation() != null)
+                    .map(a -> a.getSimulation().getSimulationId())
+                    .collect(Collectors.toSet());
+
             List<AssessmentResult> results = assessmentResultRepository.findByStudentStudentId(student.getStudentId());
             double avg = 0.0;
             if (results != null && !results.isEmpty()) {
                 avg = results.stream()
                     .filter(r -> r.getPercentage() != null && r.getPercentage() > 0)
+                    .filter(r -> r.getAssignment() != null && assignmentRepository.existsById(r.getAssignment().getAssignmentId()))
                     .mapToDouble(AssessmentResult::getPercentage)
                     .average()
                     .orElse(0.0);

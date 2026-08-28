@@ -28,14 +28,22 @@ public class ClassServiceImpl implements ClassService {
     private final SchoolRepository schoolRepository;
     private final ClassMapper classMapper;
     private final AssessmentResultRepository assessmentResultRepository;
+    private final com.kce.project.repository.AssignmentRepository assignmentRepository;
 
     private ClassResponseDTO mapToResponseWithAvgScore(SchoolClass schoolClass) {
         ClassResponseDTO dto = classMapper.toResponse(schoolClass);
+        List<com.kce.project.entity.Assignment> assignments = assignmentRepository.findBySchoolClassClassId(schoolClass.getClassId());
+        java.util.Set<Long> assignedSimulationIds = assignments.stream()
+                .filter(a -> a.getSimulation() != null)
+                .map(a -> a.getSimulation().getSimulationId())
+                .collect(Collectors.toSet());
+
         List<AssessmentResult> results = assessmentResultRepository.findByStudentSchoolClassClassId(schoolClass.getClassId());
         double avg = 0.0;
         if (results != null && !results.isEmpty()) {
             avg = results.stream()
                 .filter(r -> r.getPercentage() != null && r.getPercentage() > 0)
+                .filter(r -> r.getAssignment() != null && assignmentRepository.existsById(r.getAssignment().getAssignmentId()))
                 .mapToDouble(AssessmentResult::getPercentage)
                 .average()
                 .orElse(0.0);

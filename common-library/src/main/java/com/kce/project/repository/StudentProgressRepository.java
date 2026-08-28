@@ -19,4 +19,6 @@ public interface StudentProgressRepository
 
     long countByStudentStudentIdAndStatus(Long studentId, com.kce.project.enums.SimulationStatus status);
 
+    void deleteByAssignmentAssignmentId(Long assignmentId);
+
 }

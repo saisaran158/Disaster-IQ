@@ -12,6 +12,7 @@ import com.kce.project.repository.AIRecommendationRepository;
 import com.kce.project.repository.AssessmentResultRepository;
 import com.kce.project.repository.StudentProgressRepository;
 import com.kce.project.repository.StudentRepository;
+import com.kce.project.repository.AssignmentRepository;
 import com.kce.project.service.StudentDashboardService;
 
 import lombok.RequiredArgsConstructor;
@@ -28,6 +29,8 @@ public class StudentDashboardServiceImpl implements StudentDashboardService {
 
     private final AIRecommendationRepository recommendationRepository;
 
+    private final AssignmentRepository assignmentRepository;
+
     @Override
     public StudentDashboardResponseDTO getDashboard(Long studentId) {
 
@@ -37,18 +40,23 @@ public class StudentDashboardServiceImpl implements StudentDashboardService {
                         new RuntimeException("Student not found"));
 
         // Step 2
-        int completedAssignments =
-                progressRepository.findByStudentStudentId(studentId).size();
+        int completedAssignments = (int) progressRepository.findByStudentStudentId(studentId).stream()
+                .filter(p -> p.getStatus() == com.kce.project.enums.SimulationStatus.COMPLETED)
+                .count();
 
-        // Step 3
+        // Only include assessment results tied to still-active assignments
         List<AssessmentResult> results =
-                resultRepository.findByStudentStudentId(studentId);
+                resultRepository.findByStudentStudentId(studentId)
+                        .stream()
+                        .filter(r -> r.getAssignment() != null && assignmentRepository.existsById(r.getAssignment().getAssignmentId()))
+                        .collect(java.util.stream.Collectors.toList());
 
         // Step 4
         double average = 0;
 
         if (!results.isEmpty()) {
             average = results.stream()
+                    .filter(r -> r.getPercentage() != null)
                     .mapToDouble(AssessmentResult::getPercentage)
                     .average()
                     .orElse(0);
