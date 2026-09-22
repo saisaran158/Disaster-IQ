@@ -28,6 +28,7 @@
 		<module>identity-service</module>
 		<module>school-service</module>
 		<module>simulation-service</module>
+		<module>disasteriq-server</module>
 	</modules>
 
 	<dependencyManagement>
