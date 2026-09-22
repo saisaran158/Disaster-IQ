@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: 'http://localhost:8071', // API Gateway port
+  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:8071', // API Gateway port / Render URL
 });
 
 // Automatically append the JWT token to headers if the user is logged in
