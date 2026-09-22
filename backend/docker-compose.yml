@@ -1,0 +1,99 @@
+version: '3.8'
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: disasteriq-mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: sai@saran2007
+      MYSQL_DATABASE: disasteriq_db
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+
+  discovery-server:
+    build:
+      context: .
+      dockerfile: discovery-server/Dockerfile
+    container_name: discovery-server
+    restart: always
+    ports:
+      - "8761:8761"
+    environment:
+      - PORT=8761
+
+  identity-service:
+    build:
+      context: .
+      dockerfile: identity-service/Dockerfile
+    container_name: identity-service
+    restart: always
+    depends_on:
+      - mysql
+      - discovery-server
+    ports:
+      - "8082:8082"
+    environment:
+      - PORT=8082
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/disasteriq_db?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      - SPRING_DATASOURCE_USERNAME=root
+      - SPRING_DATASOURCE_PASSWORD=sai@saran2007
+      - EUREKA_SERVER_URL=http://discovery-server:8761/eureka/
+
+  school-service:
+    build:
+      context: .
+      dockerfile: school-service/Dockerfile
+    container_name: school-service
+    restart: always
+    depends_on:
+      - mysql
+      - discovery-server
+    ports:
+      - "8083:8083"
+    environment:
+      - PORT=8083
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/disasteriq_db?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      - SPRING_DATASOURCE_USERNAME=root
+      - SPRING_DATASOURCE_PASSWORD=sai@saran2007
+      - EUREKA_SERVER_URL=http://discovery-server:8761/eureka/
+
+  simulation-service:
+    build:
+      context: .
+      dockerfile: simulation-service/Dockerfile
+    container_name: simulation-service
+    restart: always
+    depends_on:
+      - mysql
+      - discovery-server
+    ports:
+      - "8084:8084"
+    environment:
+      - PORT=8084
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/disasteriq_db?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      - SPRING_DATASOURCE_USERNAME=root
+      - SPRING_DATASOURCE_PASSWORD=sai@saran2007
+      - EUREKA_SERVER_URL=http://discovery-server:8761/eureka/
+
+  gateway-server:
+    build:
+      context: .
+      dockerfile: gateway-server/Dockerfile
+    container_name: gateway-server
+    restart: always
+    depends_on:
+      - discovery-server
+      - identity-service
+      - school-service
+      - simulation-service
+    ports:
+      - "8071:8071"
+    environment:
+      - PORT=8071
+      - EUREKA_SERVER_URL=http://discovery-server:8761/eureka/
+
+volumes:
+  mysql_data:
