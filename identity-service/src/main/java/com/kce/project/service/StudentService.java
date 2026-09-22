@@ -17,6 +17,8 @@ public interface StudentService {
 
     List<StudentResponseDTO> getStudentsByClass(Long classId);
 
+    List<StudentResponseDTO> getStudentsByTeacher(Long teacherId);
+
     StudentResponseDTO updateStudent(Long studentId,
                                      StudentRequestDTO request);
 

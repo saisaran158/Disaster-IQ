@@ -47,42 +47,77 @@ public class StudentServiceImpl implements StudentService {
         
         // 1. Calculate Average Score
         try {
-            Long classId = student.getSchoolClass() != null ? student.getSchoolClass().getClassId() : null;
-            List<com.kce.project.entity.Assignment> assignments = classId != null 
-                    ? assignmentRepository.findBySchoolClassClassId(classId) 
-                    : java.util.Collections.emptyList();
-            java.util.Set<Long> assignedSimulationIds = assignments.stream()
-                    .filter(a -> a.getSimulation() != null)
-                    .map(a -> a.getSimulation().getSimulationId())
-                    .collect(Collectors.toSet());
-
             List<AssessmentResult> results = assessmentResultRepository.findByStudentStudentId(student.getStudentId());
             double avg = 0.0;
             if (results != null && !results.isEmpty()) {
                 avg = results.stream()
-                    .filter(r -> r.getPercentage() != null && r.getPercentage() > 0)
-                    .filter(r -> r.getAssignment() != null && assignmentRepository.existsById(r.getAssignment().getAssignmentId()))
+                    .filter(r -> r.getPercentage() != null)
                     .mapToDouble(AssessmentResult::getPercentage)
                     .average()
                     .orElse(0.0);
             }
-            dto.setAverageScore(Math.round(avg));
+            dto.setAverageScore((double) Math.round(avg));
         } catch (Exception e) {
             dto.setAverageScore(0.0);
         }
 
-        // 2. Calculate Completion Rate
+        // 2. Calculate Completion Rate & Assigned Count
         try {
             long totalAssignments = 0;
             long completedAssignments = 0;
+
+            String clsName = "";
+            String secName = "";
+
             if (student.getSchoolClass() != null) {
-                totalAssignments = assignmentRepository.countBySchoolClassClassId(student.getSchoolClass().getClassId());
+                Long cId = student.getSchoolClass().getClassId();
+                totalAssignments = assignmentRepository.countBySchoolClassClassId(cId);
+                clsName = student.getSchoolClass().getClassName() != null ? student.getSchoolClass().getClassName().trim() : "";
+                secName = student.getSchoolClass().getSection() != null ? student.getSchoolClass().getSection().trim() : "";
             }
+
+            if (totalAssignments == 0) {
+                final String targetCls = clsName;
+                final String targetSec = secName;
+                List<com.kce.project.entity.Assignment> allAsg = assignmentRepository.findAll();
+                if (!targetCls.isEmpty()) {
+                    totalAssignments = allAsg.stream()
+                        .filter(a -> a.getSchoolClass() != null
+                            && targetCls.equalsIgnoreCase(a.getSchoolClass().getClassName() != null ? a.getSchoolClass().getClassName().trim() : "")
+                            && targetSec.equalsIgnoreCase(a.getSchoolClass().getSection() != null ? a.getSchoolClass().getSection().trim() : ""))
+                        .count();
+                }
+                if (totalAssignments == 0) {
+                    totalAssignments = allAsg.size();
+                }
+            }
+
             completedAssignments = studentProgressRepository.countByStudentStudentIdAndStatus(student.getStudentId(), SimulationStatus.COMPLETED);
-            dto.setCompletionRate(completedAssignments + "/" + totalAssignments);
+            if (completedAssignments == 0) {
+                List<AssessmentResult> results = assessmentResultRepository.findByStudentStudentId(student.getStudentId());
+                if (results != null && !results.isEmpty()) {
+                    completedAssignments = results.stream().map(r -> r.getAssessment() != null ? r.getAssessment().getAssessmentId() : null).filter(java.util.Objects::nonNull).distinct().count();
+                }
+            }
+
+            dto.setCompletionRate(completedAssignments + "/" + (totalAssignments > 0 ? totalAssignments : 1));
         } catch (Exception e) {
             dto.setCompletionRate("0/0");
         }
+
+        try {
+            if (student.getTeacher() != null) {
+                dto.setTeacherId(student.getTeacher().getTeacherId());
+                if (student.getTeacher().getUser() != null) {
+                    dto.setTeacherName(student.getTeacher().getUser().getFullName());
+                }
+            } else if (student.getSchoolClass() != null && student.getSchoolClass().getTeacher() != null) {
+                dto.setTeacherId(student.getSchoolClass().getTeacher().getTeacherId());
+                if (student.getSchoolClass().getTeacher().getUser() != null) {
+                    dto.setTeacherName(student.getSchoolClass().getTeacher().getUser().getFullName());
+                }
+            }
+        } catch (Exception e) {}
 
         return dto;
     }
@@ -154,6 +189,19 @@ public class StudentServiceImpl implements StudentService {
 
         return studentRepository.findBySchoolClassClassId(classId)
                 .stream()
+                .map(this::mapToResponseWithMetrics)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<StudentResponseDTO> getStudentsByTeacher(Long teacherId) {
+        List<Student> allStds = studentRepository.findAll();
+        return allStds.stream()
+                .filter(s -> {
+                    if (s.getTeacher() != null && teacherId.equals(s.getTeacher().getTeacherId())) return true;
+                    if (s.getSchoolClass() != null && s.getSchoolClass().getTeacher() != null && teacherId.equals(s.getSchoolClass().getTeacher().getTeacherId())) return true;
+                    return false;
+                })
                 .map(this::mapToResponseWithMetrics)
                 .collect(Collectors.toList());
     }

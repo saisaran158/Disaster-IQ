@@ -13,15 +13,7 @@ import lombok.*;
 public class StudentAnswer extends BaseEntity {
 
     @Id
-    @SequenceGenerator(
-            name = "answer_seq",
-            sequenceName = "answer_seq",
-            allocationSize = 1
-    )
-    @GeneratedValue(
-            strategy = GenerationType.SEQUENCE,
-            generator = "answer_seq"
-    )
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "answer_id")
     private Long answerId;
 

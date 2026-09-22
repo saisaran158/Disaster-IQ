@@ -19,15 +19,7 @@ import java.util.List;
 public class Simulation extends BaseEntity {
 
     @Id
-    @SequenceGenerator(
-            name = "simulation_seq",
-            sequenceName = "simulation_seq",
-            allocationSize = 1
-    )
-    @GeneratedValue(
-            strategy = GenerationType.SEQUENCE,
-            generator = "simulation_seq"
-    )
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "simulation_id")
     private Long simulationId;
 

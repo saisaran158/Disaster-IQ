@@ -42,22 +42,39 @@ public class TeacherDashboardServiceImpl implements TeacherDashboardService {
         Teacher teacher = teacherRepository.findById(teacherId)
                 .orElseThrow(() -> new RuntimeException("Teacher not found"));
 
+        // Auto-associate unassigned classes in the same school
+        if (teacher.getSchool() != null) {
+            List<SchoolClass> schoolClasses = classRepository.findBySchoolSchoolId(teacher.getSchool().getSchoolId());
+            for (SchoolClass sc : schoolClasses) {
+                if (sc.getTeacher() == null) {
+                    sc.setTeacher(teacher);
+                    classRepository.save(sc);
+                }
+            }
+        }
+
         List<SchoolClass> classes = classRepository.findByTeacherTeacherId(teacherId);
         int totalClasses = classes.size();
 
-        int totalStudents = classes.stream()
-                .mapToInt(c -> c.getStudents().size())
-                .sum();
+        // Strictly query students mapped to this teacher (1-to-1 mapping)
+        List<com.kce.project.entity.Student> teacherStudents = studentRepository.findAll().stream()
+                .filter(s -> {
+                    if (s.getTeacher() != null && teacherId.equals(s.getTeacher().getTeacherId())) return true;
+                    if (s.getSchoolClass() != null && s.getSchoolClass().getTeacher() != null && teacherId.equals(s.getSchoolClass().getTeacher().getTeacherId())) return true;
+                    return false;
+                })
+                .toList();
+
+        int totalStudents = teacherStudents.size();
+        java.util.Set<Long> teacherStudentIds = teacherStudents.stream()
+                .map(com.kce.project.entity.Student::getStudentId)
+                .collect(java.util.stream.Collectors.toSet());
 
         List<Assignment> assignments = assignmentRepository.findByTeacherTeacherId(teacherId);
         int totalAssignments = assignments.size();
 
-        // Distinct simulations assigned by THIS teacher
-        long totalSimulations = assignments.stream()
-                .map(a -> a.getSimulation() != null ? a.getSimulation().getSimulationId() : null)
-                .filter(id -> id != null)
-                .distinct()
-                .count();
+        // Total assigned simulations by this teacher
+        int totalSimulationsCount = assignments.size();
 
         List<Simulation> ownedSimulations = simulationRepository.findByCreatedByTeacherId(teacherId);
         int totalAssessments = (int) ownedSimulations.stream()
@@ -65,14 +82,9 @@ public class TeacherDashboardServiceImpl implements TeacherDashboardService {
                 .filter(a -> a != null)
                 .count();
 
-        java.util.Set<Long> assignedSimulationIds = assignments.stream()
-                .filter(a -> a.getSimulation() != null)
-                .map(a -> a.getSimulation().getSimulationId())
-                .collect(Collectors.toSet());
-
-        List<AssessmentResult> results = classes.stream()
-                .flatMap(c -> resultRepository.findByStudentSchoolClassClassId(c.getClassId()).stream())
-                .filter(r -> r.getAssignment() != null && assignmentRepository.existsById(r.getAssignment().getAssignmentId()))
+        // Strictly query assessment results for this teacher's students only
+        List<AssessmentResult> results = resultRepository.findAll().stream()
+                .filter(r -> r.getStudent() != null && teacherStudentIds.contains(r.getStudent().getStudentId()))
                 .toList();
 
         double averageScore = 0;
@@ -84,20 +96,46 @@ public class TeacherDashboardServiceImpl implements TeacherDashboardService {
                     .orElse(0);
         }
 
-        int passedStudents = (int) results.stream().filter(AssessmentResult::getPassed).count();
-        int failedStudents = (int) results.stream().filter(r -> !r.getPassed()).count();
+        int passedStudents = (int) results.stream().filter(r -> Boolean.TRUE.equals(r.getPassed())).count();
+        int failedStudents = (int) results.stream().filter(r -> Boolean.FALSE.equals(r.getPassed())).count();
 
-        // Completed only when ALL students in the class have COMPLETED
+        // Completed assignments count: count assignments where ALL enrolled students of that class under this teacher have completed the simulation
         int completedAssignmentsCount = 0;
-        for (Assignment asg : assignments) {
-            Long classId = asg.getSchoolClass() != null ? asg.getSchoolClass().getClassId() : null;
-            if (classId == null) continue;
-            long totalStudentsInClass = studentRepository.countBySchoolClassClassId(classId);
-            if (totalStudentsInClass == 0) continue;
-            long completedStudents = progressRepository.countByAssignmentAssignmentIdAndStatus(
-                    asg.getAssignmentId(), com.kce.project.enums.SimulationStatus.COMPLETED);
-            if (completedStudents >= totalStudentsInClass) {
+        for (Assignment a : assignments) {
+            List<com.kce.project.entity.Student> enrolledStudents = teacherStudents.stream()
+                    .filter(st -> {
+                        if (a.getSchoolClass() != null && st.getSchoolClass() != null) {
+                            if (a.getSchoolClass().getClassId() != null && a.getSchoolClass().getClassId().equals(st.getSchoolClass().getClassId())) {
+                                return true;
+                            }
+                            String asgCls = a.getSchoolClass().getClassName() != null ? a.getSchoolClass().getClassName().trim() : "";
+                            String asgSec = a.getSchoolClass().getSection() != null ? a.getSchoolClass().getSection().trim() : "";
+                            String stdCls = st.getSchoolClass().getClassName() != null ? st.getSchoolClass().getClassName().trim() : "";
+                            String stdSec = st.getSchoolClass().getSection() != null ? st.getSchoolClass().getSection().trim() : "";
+                            return !asgCls.isEmpty() && asgCls.equalsIgnoreCase(stdCls) && asgSec.equalsIgnoreCase(stdSec);
+                        }
+                        return false;
+                    })
+                    .toList();
+
+            long completedCount = enrolledStudents.stream()
+                    .filter(st -> {
+                        boolean inProgress = progressRepository.findByStudentStudentIdAndAssignmentAssignmentId(
+                                st.getStudentId(), a.getAssignmentId())
+                                .map(p -> p.getStatus() == com.kce.project.enums.SimulationStatus.COMPLETED)
+                                .orElse(false);
+                        if (inProgress) return true;
+                        return results.stream().anyMatch(r -> r.getStudent() != null && r.getStudent().getStudentId().equals(st.getStudentId())
+                                && r.getAssignment() != null && a.getAssignmentId().equals(r.getAssignment().getAssignmentId()));
+                    })
+                    .count();
+
+            if (!enrolledStudents.isEmpty() && completedCount >= enrolledStudents.size()) {
                 completedAssignmentsCount++;
+            } else if (enrolledStudents.isEmpty()) {
+                long anyCompleted = progressRepository.countByAssignmentAssignmentIdAndStatus(
+                        a.getAssignmentId(), com.kce.project.enums.SimulationStatus.COMPLETED);
+                if (anyCompleted > 0) completedAssignmentsCount++;
             }
         }
 
@@ -107,7 +145,7 @@ public class TeacherDashboardServiceImpl implements TeacherDashboardService {
                 .totalClasses(totalClasses)
                 .totalStudents(totalStudents)
                 .totalAssignments(totalAssignments)
-                .totalSimulations((int) totalSimulations)
+                .totalSimulations(totalSimulationsCount)
                 .totalAssessments(totalAssessments)
                 .averageScore(averageScore)
                 .completedAssignments(completedAssignmentsCount)

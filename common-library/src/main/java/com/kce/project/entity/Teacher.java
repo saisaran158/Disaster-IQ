@@ -17,15 +17,7 @@ import java.util.List;
 public class Teacher extends BaseEntity {
 
     @Id
-    @SequenceGenerator(
-            name = "teacher_seq",
-            sequenceName = "teacher_seq",
-            allocationSize = 1
-    )
-    @GeneratedValue(
-            strategy = GenerationType.SEQUENCE,
-            generator = "teacher_seq"
-    )
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "teacher_id")
     private Long teacherId;
 

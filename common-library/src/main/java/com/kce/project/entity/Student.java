@@ -17,15 +17,7 @@ import java.util.List;
 public class Student extends BaseEntity {
 
     @Id
-    @SequenceGenerator(
-            name = "student_seq",
-            sequenceName = "student_seq",
-            allocationSize = 1
-    )
-    @GeneratedValue(
-            strategy = GenerationType.SEQUENCE,
-            generator = "student_seq"
-    )
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "student_id")
     private Long studentId;
 
@@ -40,6 +32,10 @@ public class Student extends BaseEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "class_id")
     private SchoolClass schoolClass;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "teacher_id")
+    private Teacher teacher;
 
     @Column(unique = true)
     private String rollNumber;

@@ -22,4 +22,6 @@ public class ClassRequestDTO {
 
     @NotNull
     private Long schoolId;
+
+    private Long teacherId;
 }

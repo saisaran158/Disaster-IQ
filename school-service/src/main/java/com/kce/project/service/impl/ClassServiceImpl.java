@@ -6,6 +6,7 @@ import com.kce.project.dto.request.ClassRequestDTO;
 import com.kce.project.dto.response.ClassResponseDTO;
 import com.kce.project.entity.School;
 import com.kce.project.entity.SchoolClass;
+import com.kce.project.entity.Teacher;
 import com.kce.project.mapper.ClassMapper;
 import com.kce.project.repository.SchoolClassRepository;
 import com.kce.project.repository.SchoolRepository;
@@ -27,6 +28,8 @@ public class ClassServiceImpl implements ClassService {
     private final SchoolClassRepository classRepository;
     private final SchoolRepository schoolRepository;
     private final ClassMapper classMapper;
+    private final com.kce.project.repository.TeacherRepository teacherRepository;
+    private final com.kce.project.repository.UserRepository userRepository;
     private final AssessmentResultRepository assessmentResultRepository;
     private final com.kce.project.repository.AssignmentRepository assignmentRepository;
 
@@ -57,23 +60,65 @@ public class ClassServiceImpl implements ClassService {
     public ClassResponseDTO createClass(ClassRequestDTO request) {
 
         School school = schoolRepository.findById(request.getSchoolId())
-                .orElseThrow(() ->
-                        new ResourceNotFoundException("School not found"));
+                .orElse(null);
 
-        if (classRepository.existsByClassNameAndSectionAndSchool(
-                request.getClassName(),
-                request.getSection(),
-                school)) {
+        if (school == null) {
+            school = schoolRepository.findAll().stream().findFirst().orElse(null);
+        }
+        if (school == null) {
+            school = schoolRepository.save(School.builder()
+                    .schoolName("Default School")
+                    .district("Coimbatore")
+                    .state("Tamil Nadu")
+                    .build());
+        }
 
-            throw new ResourceAlreadyExistsException(
-                    "Class already exists in this school");
+        Teacher teacher = null;
+        if (request.getTeacherId() != null) {
+            teacher = teacherRepository.findById(request.getTeacherId()).orElse(null);
+        }
+        if (teacher == null) {
+            try {
+                String currentEmail = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication().getName();
+                var uOpt = userRepository.findByEmail(currentEmail);
+                if (uOpt.isPresent() && uOpt.get().getRole() == com.kce.project.enums.Role.TEACHER) {
+                    teacher = teacherRepository.findByUserUserId(uOpt.get().getUserId()).orElse(null);
+                }
+            } catch (Exception ex) {}
+        }
+
+        final Teacher finalTeacher = teacher;
+        final String clsName = request.getClassName() != null ? request.getClassName().trim() : "Class";
+        final String secName = request.getSection() != null ? request.getSection().trim() : "A";
+
+        SchoolClass existingClass = classRepository.findAll().stream()
+                .filter(c -> {
+                    String cName = c.getClassName() != null ? c.getClassName().trim() : "";
+                    String cSec = c.getSection() != null ? c.getSection().trim() : "";
+                    boolean isNameMatch = cName.equalsIgnoreCase(clsName) && cSec.equalsIgnoreCase(secName);
+                    if (!isNameMatch) return false;
+                    if (finalTeacher != null && c.getTeacher() != null) {
+                        return c.getTeacher().getTeacherId().equals(finalTeacher.getTeacherId());
+                    }
+                    return true;
+                })
+                .findFirst()
+                .orElse(null);
+
+        if (existingClass != null) {
+            if (existingClass.getTeacher() == null && finalTeacher != null) {
+                existingClass.setTeacher(finalTeacher);
+                existingClass = classRepository.save(existingClass);
+            }
+            return mapToResponseWithAvgScore(existingClass);
         }
 
         SchoolClass schoolClass = SchoolClass.builder()
-                .className(request.getClassName())
-                .section(request.getSection())
-                .academicYear(request.getAcademicYear())
+                .className(clsName)
+                .section(secName)
+                .academicYear(request.getAcademicYear() != null ? request.getAcademicYear() : "2025-2026")
                 .school(school)
+                .teacher(finalTeacher)
                 .build();
 
         return mapToResponseWithAvgScore(

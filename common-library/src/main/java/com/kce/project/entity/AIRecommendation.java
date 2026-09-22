@@ -13,15 +13,7 @@ import lombok.*;
 public class AIRecommendation extends BaseEntity {
 
     @Id
-    @SequenceGenerator(
-            name = "recommendation_seq",
-            sequenceName = "recommendation_seq",
-            allocationSize = 1
-    )
-    @GeneratedValue(
-            strategy = GenerationType.SEQUENCE,
-            generator = "recommendation_seq"
-    )
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "recommendation_id")
     private Long recommendationId;
 

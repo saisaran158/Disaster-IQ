@@ -33,5 +33,7 @@ public class RegisterRequestDTO {
     private String studentRoll;
     private String className;
     private String section;
+    private Long teacherId;
+    private String teacherEmail;
 
 }

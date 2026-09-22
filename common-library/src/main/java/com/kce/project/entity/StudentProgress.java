@@ -16,15 +16,7 @@ import java.time.LocalDateTime;
 public class StudentProgress extends BaseEntity {
 
     @Id
-    @SequenceGenerator(
-            name = "progress_seq",
-            sequenceName = "progress_seq",
-            allocationSize = 1
-    )
-    @GeneratedValue(
-            strategy = GenerationType.SEQUENCE,
-            generator = "progress_seq"
-    )
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "progress_id")
     private Long progressId;
 

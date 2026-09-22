@@ -6,6 +6,7 @@ import com.kce.project.entity.Assignment;
 import com.kce.project.entity.AssessmentResult;
 import com.kce.project.entity.SchoolClass;
 import com.kce.project.entity.Simulation;
+import com.kce.project.entity.Student;
 import com.kce.project.entity.StudentProgress;
 import com.kce.project.entity.Teacher;
 import com.kce.project.enums.SimulationStatus;
@@ -116,7 +117,50 @@ public class AssignmentServiceImpl implements AssignmentService {
 
     @Override
     public List<AssignmentResponseDTO> getAssignmentsForStudent(Long studentId, Long classId) {
-        List<Assignment> assignments = assignmentRepository.findBySchoolClassClassId(classId);
+        Student student = studentRepository.findById(studentId).orElse(null);
+        Teacher creatorTeacher = null;
+        if (student != null) {
+            creatorTeacher = student.getTeacher();
+            if (creatorTeacher == null && student.getSchoolClass() != null) {
+                creatorTeacher = student.getSchoolClass().getTeacher();
+            }
+        }
+
+        List<Assignment> assignments = new java.util.ArrayList<>();
+
+        if (creatorTeacher != null) {
+            // Strictly fetch assignments created ONLY by the teacher who created this student
+            final Long tId = creatorTeacher.getTeacherId();
+            List<Assignment> teacherAssignments = assignmentRepository.findByTeacherTeacherId(tId);
+
+            SchoolClass studentClass = (student != null && student.getSchoolClass() != null)
+                    ? student.getSchoolClass()
+                    : schoolClassRepository.findById(classId).orElse(null);
+
+            final String targetCls = (studentClass != null && studentClass.getClassName() != null)
+                    ? studentClass.getClassName().trim() : "";
+            final String targetSec = (studentClass != null && studentClass.getSection() != null)
+                    ? studentClass.getSection().trim() : "";
+
+            for (Assignment a : teacherAssignments) {
+                if (a.getSchoolClass() != null) {
+                    if (classId != null && classId.equals(a.getSchoolClass().getClassId())) {
+                        assignments.add(a);
+                        continue;
+                    }
+                    String aCls = a.getSchoolClass().getClassName() != null ? a.getSchoolClass().getClassName().trim() : "";
+                    String aSec = a.getSchoolClass().getSection() != null ? a.getSchoolClass().getSection().trim() : "";
+                    if (!targetCls.isEmpty() && targetCls.equalsIgnoreCase(aCls) && targetSec.equalsIgnoreCase(aSec)) {
+                        if (assignments.stream().noneMatch(existing -> existing.getAssignmentId().equals(a.getAssignmentId()))) {
+                            assignments.add(a);
+                        }
+                    }
+                }
+            }
+        } else {
+            // Fallback if creator teacher is unknown: only fetch for this specific classId
+            assignments.addAll(assignmentRepository.findBySchoolClassClassId(classId));
+        }
 
         return assignments.stream().map(assignment -> {
             AssignmentResponseDTO dto = mapToResponseWithCounts(assignment);

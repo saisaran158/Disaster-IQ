@@ -48,4 +48,14 @@ public interface StudentRepository extends JpaRepository<Student, Long> {
     List<Student> findBySchoolClassClassId(Long classId);
 
     long countBySchoolClassClassId(Long classId);
+
+    @EntityGraph(attributePaths = {
+            "user",
+            "school",
+            "schoolClass",
+            "teacher"
+    })
+    List<Student> findByTeacherTeacherId(Long teacherId);
+
+    long countByTeacherTeacherId(Long teacherId);
 }

@@ -16,15 +16,7 @@ import java.time.LocalDate;
 public class Assignment extends BaseEntity {
 
     @Id
-    @SequenceGenerator(
-            name = "assignment_seq",
-            sequenceName = "assignment_seq",
-            allocationSize = 1
-    )
-    @GeneratedValue(
-            strategy = GenerationType.SEQUENCE,
-            generator = "assignment_seq"
-    )
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "assignment_id")
     private Long assignmentId;
 

@@ -36,4 +36,8 @@ public class StudentResponseDTO {
     private String completionRate;
 
     private String password;
+
+    private Long teacherId;
+
+    private String teacherName;
 }

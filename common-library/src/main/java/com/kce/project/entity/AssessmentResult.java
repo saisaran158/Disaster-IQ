@@ -17,15 +17,7 @@ import java.util.List;
 public class AssessmentResult extends BaseEntity {
 
     @Id
-    @SequenceGenerator(
-            name = "result_seq",
-            sequenceName = "result_seq",
-            allocationSize = 1
-    )
-    @GeneratedValue(
-            strategy = GenerationType.SEQUENCE,
-            generator = "result_seq"
-    )
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "result_id")
     private Long resultId;
 

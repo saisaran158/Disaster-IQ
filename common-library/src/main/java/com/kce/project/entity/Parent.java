@@ -13,15 +13,7 @@ import lombok.*;
 public class Parent extends BaseEntity {
 
     @Id
-    @SequenceGenerator(
-            name = "parent_seq",
-            sequenceName = "parent_seq",
-            allocationSize = 1
-    )
-    @GeneratedValue(
-            strategy = GenerationType.SEQUENCE,
-            generator = "parent_seq"
-    )
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "parent_id")
     private Long parentId;
 

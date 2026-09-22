@@ -24,11 +24,12 @@ public class AdminSeeder implements CommandLineRunner {
         if (userRepository.findByEmail("admin@gmail.com").isEmpty()) {
 
             User admin = User.builder()
-                    .fullName("System Administrator")
+                    .fullName("Admin")
                     .email("admin@gmail.com")
                     .password(passwordEncoder.encode("admin123"))
                     .role(Role.ADMIN)
                     .phone("0000000000")
+                    .active(true)
                     .build();
 
             userRepository.save(admin);

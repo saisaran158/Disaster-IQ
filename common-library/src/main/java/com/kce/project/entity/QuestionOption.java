@@ -13,15 +13,7 @@ import lombok.*;
 public class QuestionOption extends BaseEntity {
 
     @Id
-    @SequenceGenerator(
-            name = "option_seq",
-            sequenceName = "option_seq",
-            allocationSize = 1
-    )
-    @GeneratedValue(
-            strategy = GenerationType.SEQUENCE,
-            generator = "option_seq"
-    )
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "option_id")
     private Long optionId;
 

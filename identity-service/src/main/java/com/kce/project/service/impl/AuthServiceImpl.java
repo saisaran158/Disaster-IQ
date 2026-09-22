@@ -14,6 +14,7 @@ import com.kce.project.dto.response.RegisterResponseDTO;
 import com.kce.project.dto.response.UserProfileResponseDTO;
 import com.kce.project.entity.Parent;
 import com.kce.project.entity.School;
+import com.kce.project.entity.SchoolClass;
 import com.kce.project.entity.Student;
 import com.kce.project.entity.Teacher;
 import com.kce.project.entity.User;
@@ -56,12 +57,17 @@ public class AuthServiceImpl implements AuthService {
     @Override
     public RegisterResponseDTO register(RegisterRequestDTO request) {
 
-        if (userRepository.existsByEmail(request.getEmail())) {
+        if (request.getEmail() != null && userRepository.existsByEmail(request.getEmail().trim())) {
             throw new ResourceAlreadyExistsException("Email already exists.");
         }
 
-        if (userRepository.existsByPhone(request.getPhone())) {
-            throw new ResourceAlreadyExistsException("Phone number already exists.");
+        String phoneToSave = request.getPhone() != null ? request.getPhone().trim() : null;
+        if (phoneToSave != null && !phoneToSave.isEmpty() && userRepository.existsByPhone(phoneToSave)) {
+            if (request.getRole() == Role.STUDENT) {
+                phoneToSave = phoneToSave + "-" + (System.currentTimeMillis() % 10000);
+            } else {
+                throw new ResourceAlreadyExistsException("Phone number already exists.");
+            }
         }
 
         School school = null;
@@ -96,7 +102,7 @@ public class AuthServiceImpl implements AuthService {
                         .fullName(request.getFullName())
                         .email(request.getEmail())
                         .password(passwordEncoder.encode(request.getPassword()))
-                        .phone(request.getPhone())
+                        .phone(phoneToSave)
                         .role(request.getRole())
                         .school(school)
                         .plainPassword(request.getPassword())
@@ -121,39 +127,66 @@ public class AuthServiceImpl implements AuthService {
                 // Ignore any security context exception
             }
 
-            var schoolClass = (loggedInTeacher != null)
-                    ? schoolClassRepository.findByTeacherTeacherId(loggedInTeacher.getTeacherId()).stream().findFirst().orElse(null)
-                    : schoolClassRepository.findAll().stream().findFirst().orElse(null);
+            Teacher effectiveTeacher = null;
+            if (request.getTeacherId() != null) {
+                effectiveTeacher = teacherRepository.findById(request.getTeacherId()).orElse(null);
+            }
+            if (effectiveTeacher == null && request.getTeacherEmail() != null && !request.getTeacherEmail().trim().isEmpty()) {
+                var userOpt = userRepository.findByEmail(request.getTeacherEmail().trim().toLowerCase());
+                if (userOpt.isPresent()) {
+                    effectiveTeacher = teacherRepository.findByUserUserId(userOpt.get().getUserId()).orElse(null);
+                }
+            }
+            if (effectiveTeacher == null) {
+                effectiveTeacher = loggedInTeacher;
+            }
+            if (effectiveTeacher == null) {
+                if (school != null) {
+                    effectiveTeacher = teacherRepository.findBySchoolSchoolId(school.getSchoolId()).stream().findFirst().orElse(null);
+                }
+                if (effectiveTeacher == null) {
+                    effectiveTeacher = teacherRepository.findAll().stream().findFirst().orElse(null);
+                }
+            }
 
-            if (request.getClassName() != null && !request.getClassName().trim().isEmpty()) {
-                final String clsName = request.getClassName().trim();
-                final String secName = request.getSection() != null ? request.getSection().trim() : "A";
-                final Teacher currentTeacher = loggedInTeacher;
+            SchoolClass schoolClass = null;
+            final String targetCls = (request.getClassName() != null && !request.getClassName().trim().isEmpty())
+                    ? request.getClassName().trim() : "Class 6";
+            final String targetSec = (request.getSection() != null && !request.getSection().trim().isEmpty())
+                    ? request.getSection().trim() : "A";
 
-                schoolClass = schoolClassRepository.findAll().stream()
-                        .filter(c -> c.getClassName().equalsIgnoreCase(clsName) 
-                                && c.getSection().equalsIgnoreCase(secName)
-                                && (currentTeacher == null || (c.getTeacher() != null && c.getTeacher().getTeacherId().equals(currentTeacher.getTeacherId()))))
+            if (effectiveTeacher != null) {
+                final Teacher tch = effectiveTeacher;
+                schoolClass = schoolClassRepository.findByTeacherTeacherId(tch.getTeacherId()).stream()
+                        .filter(c -> {
+                            String cName = c.getClassName() != null ? c.getClassName().trim() : "";
+                            String cSec = c.getSection() != null ? c.getSection().trim() : "";
+                            return cName.equalsIgnoreCase(targetCls) && cSec.equalsIgnoreCase(targetSec);
+                        })
                         .findFirst()
                         .orElse(null);
+            }
 
-                if (schoolClass == null) {
-                    com.kce.project.entity.SchoolClass newCls = com.kce.project.entity.SchoolClass.builder()
-                            .className(clsName)
-                            .section(secName)
-                            .school(school)
-                            .teacher(loggedInTeacher)
-                            .build();
-                    schoolClass = schoolClassRepository.save(newCls);
-                }
+            if (schoolClass == null) {
+                com.kce.project.entity.SchoolClass newCls = com.kce.project.entity.SchoolClass.builder()
+                        .className(targetCls)
+                        .section(targetSec)
+                        .school(school)
+                        .teacher(effectiveTeacher)
+                        .build();
+                schoolClass = schoolClassRepository.save(newCls);
             }
             String rollNo = (request.getStudentRoll() != null && !request.getStudentRoll().trim().isEmpty())
                     ? request.getStudentRoll().trim()
                     : "ROLL-" + newUser.getUserId();
+            if (studentRepository.existsByRollNumber(rollNo)) {
+                rollNo = rollNo + "-" + newUser.getUserId();
+            }
             Student student = Student.builder()
                     .user(newUser)
                     .school(school)
                     .schoolClass(schoolClass)
+                    .teacher(effectiveTeacher)
                     .rollNumber(rollNo)
                     .admissionNumber("ADM-" + newUser.getUserId())
                     .build();
@@ -207,7 +240,10 @@ public class AuthServiceImpl implements AuthService {
     @Override
     public LoginResponseDTO login(LoginRequestDTO request) {
 
-        com.kce.project.entity.User user = userRepository.findByEmail(request.getEmail())
+        String emailInput = request.getEmail() != null ? request.getEmail().trim() : "";
+        String passwordInput = request.getPassword() != null ? request.getPassword().trim() : "";
+
+        com.kce.project.entity.User user = userRepository.findByEmailIgnoreCase(emailInput)
                 .orElseThrow(() ->
                         new BadRequestException("Invalid Email or Password"));
 
@@ -223,8 +259,8 @@ public class AuthServiceImpl implements AuthService {
 
         authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
-                        request.getEmail(),
-                        request.getPassword()
+                        user.getEmail(),
+                        passwordInput
                 )
         );
 

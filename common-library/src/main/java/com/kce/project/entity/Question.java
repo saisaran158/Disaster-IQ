@@ -17,15 +17,7 @@ import java.util.List;
 public class Question extends BaseEntity {
 
     @Id
-    @SequenceGenerator(
-            name = "question_seq",
-            sequenceName = "question_seq",
-            allocationSize = 1
-    )
-    @GeneratedValue(
-            strategy = GenerationType.SEQUENCE,
-            generator = "question_seq"
-    )
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "question_id")
     private Long questionId;
 

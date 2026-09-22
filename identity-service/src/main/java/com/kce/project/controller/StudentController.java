@@ -3,6 +3,7 @@ package com.kce.project.controller;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -82,18 +83,11 @@ public class StudentController {
             return ResponseEntity.ok(Collections.emptyList());
         }
 
-        // Teacher role: can only view students in their assigned classes
+        // Teacher role: STRICTLY return ONLY students mapped to this teacher (1-to-1)
         if (user.getRole() == com.kce.project.enums.Role.TEACHER) {
             Teacher teacher = teacherRepository.findByUserUserId(user.getUserId()).orElse(null);
             if (teacher != null) {
-                List<SchoolClass> classes = classRepository.findByTeacherTeacherId(teacher.getTeacherId());
-                if (classes != null && !classes.isEmpty()) {
-                    List<StudentResponseDTO> teacherStudents = new ArrayList<>();
-                    for (SchoolClass c : classes) {
-                        teacherStudents.addAll(studentService.getStudentsByClass(c.getClassId()));
-                    }
-                    return ResponseEntity.ok(teacherStudents);
-                }
+                return ResponseEntity.ok(studentService.getStudentsByTeacher(teacher.getTeacherId()));
             }
             return ResponseEntity.ok(Collections.emptyList());
         }

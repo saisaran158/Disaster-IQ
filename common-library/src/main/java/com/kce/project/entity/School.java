@@ -19,15 +19,7 @@ import java.util.List;
 public class School extends BaseEntity {
 
     @Id
-    @SequenceGenerator(
-            name = "school_seq",
-            sequenceName = "school_seq",
-            allocationSize = 1
-    )
-    @GeneratedValue(
-            strategy = GenerationType.SEQUENCE,
-            generator = "school_seq"
-    )
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "school_id")
     private Long schoolId;
 

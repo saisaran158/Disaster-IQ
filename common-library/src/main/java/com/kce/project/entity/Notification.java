@@ -14,15 +14,7 @@ import lombok.*;
 public class Notification extends BaseEntity {
 
     @Id
-    @SequenceGenerator(
-            name = "notification_seq",
-            sequenceName = "notification_seq",
-            allocationSize = 1
-    )
-    @GeneratedValue(
-            strategy = GenerationType.SEQUENCE,
-            generator = "notification_seq"
-    )
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "notification_id")
     private Long notificationId;
 
